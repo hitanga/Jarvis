@@ -63,7 +63,7 @@
     <div id="loading">
         <div class="flex flex-col items-center gap-4">
             <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p>Initializing Interface...</p>
+            <p id="loading-text">Initializing Interface...</p>
         </div>
     </div>
 
@@ -201,77 +201,106 @@
             isGenerating: false
         };
 
-        // --- DOM Elements ---
-        const els = {
-            app: document.getElementById('app'),
-            loading: document.getElementById('loading'),
-            sidebar: document.getElementById('sidebar'),
-            sidebarOverlay: document.getElementById('sidebar-overlay'),
-            chatContainer: document.getElementById('chat-container'),
-            chatList: document.getElementById('chat-list'),
-            userInput: document.getElementById('user-input'),
-            welcomeScreen: document.getElementById('welcome-screen'),
-            settingsModal: document.getElementById('settings-modal'),
-            renameModal: document.getElementById('rename-modal'),
-            chatOptionsMenu: document.getElementById('chat-options-menu'),
-            chatOptionsBtn: document.getElementById('chat-options-btn'),
-            apiKeyInput: document.getElementById('api-key-input'),
-            modelInput: document.getElementById('model-input'),
-            systemPromptInput: document.getElementById('system-prompt-input'),
-            renameInput: document.getElementById('rename-input'),
-            currentModelDisplay: document.getElementById('current-model-display'),
-            sendBtn: document.getElementById('send-btn')
+        let els = {};
+
+        // --- Safe Storage Wrapper ---
+        const SafeStorage = {
+            getItem: (key) => {
+                try { return localStorage.getItem(key); }
+                catch (e) { console.warn('LocalStorage access denied'); return null; }
+            },
+            setItem: (key, val) => {
+                try { localStorage.setItem(key, val); }
+                catch (e) { console.warn('LocalStorage write denied'); }
+            }
         };
 
         // --- Initialization ---
-        document.addEventListener('DOMContentLoaded', () => {
-            loadState();
-            applyTheme();
-            renderSidebar();
-            
-            // If no chats, create one
-            if (STATE.chats.length === 0) {
-                createNewChat(false);
-            } else {
-                // Select most recent or first
-                if (!STATE.currentChatId) STATE.currentChatId = STATE.chats[0].id;
-                renderChat();
+        // Use 'load' instead of 'DOMContentLoaded' to wait for CDNs (Marked/Highlight)
+        window.addEventListener('load', () => {
+            try {
+                initDOM();
+                loadState();
+                applyTheme();
+                renderSidebar();
+                
+                // If no chats, create one
+                if (STATE.chats.length === 0) {
+                    createNewChat(false);
+                } else {
+                    if (!STATE.currentChatId) STATE.currentChatId = STATE.chats[0].id;
+                    renderChat();
+                }
+
+                // Config Marked safely
+                if (typeof marked !== 'undefined') {
+                    marked.setOptions({
+                        highlight: function(code, lang) {
+                            if (typeof highlight !== 'undefined') {
+                                const language = highlight.getLanguage(lang) ? lang : 'plaintext';
+                                return highlight.highlight(code, { language }).value;
+                            }
+                            return code;
+                        },
+                        breaks: true
+                    });
+                }
+
+            } catch (error) {
+                console.error("Initialization failed:", error);
+                alert("App failed to initialize fully. Some features may be broken.\nError: " + error.message);
+            } finally {
+                // FORCE HIDE LOADER
+                const loader = document.getElementById('loading');
+                const app = document.getElementById('app');
+                if (loader) loader.style.display = 'none';
+                if (app) app.classList.remove('hidden');
             }
-
-            // Hide loader
-            setTimeout(() => {
-                els.loading.classList.add('hidden');
-                els.app.classList.remove('hidden');
-            }, 500);
-
-            // Marked config
-            marked.setOptions({
-                highlight: function(code, lang) {
-                    const language = highlight.getLanguage(lang) ? lang : 'plaintext';
-                    return highlight.highlight(code, { language }).value;
-                },
-                breaks: true
-            });
         });
+
+        function initDOM() {
+            els = {
+                app: document.getElementById('app'),
+                loading: document.getElementById('loading'),
+                sidebar: document.getElementById('sidebar'),
+                sidebarOverlay: document.getElementById('sidebar-overlay'),
+                chatContainer: document.getElementById('chat-container'),
+                chatList: document.getElementById('chat-list'),
+                userInput: document.getElementById('user-input'),
+                welcomeScreen: document.getElementById('welcome-screen'),
+                settingsModal: document.getElementById('settings-modal'),
+                renameModal: document.getElementById('rename-modal'),
+                chatOptionsMenu: document.getElementById('chat-options-menu'),
+                chatOptionsBtn: document.getElementById('chat-options-btn'),
+                apiKeyInput: document.getElementById('api-key-input'),
+                modelInput: document.getElementById('model-input'),
+                systemPromptInput: document.getElementById('system-prompt-input'),
+                renameInput: document.getElementById('rename-input'),
+                currentModelDisplay: document.getElementById('current-model-display'),
+                sendBtn: document.getElementById('send-btn')
+            };
+        }
 
         // --- Persistence ---
         function saveState() {
-            localStorage.setItem('gemini_clone_state', JSON.stringify(STATE));
+            SafeStorage.setItem('gemini_clone_state', JSON.stringify(STATE));
         }
 
         function loadState() {
-            const saved = localStorage.getItem('gemini_clone_state');
+            const saved = SafeStorage.getItem('gemini_clone_state');
             if (saved) {
-                const parsed = JSON.parse(saved);
-                STATE.chats = parsed.chats || [];
-                STATE.currentChatId = parsed.currentChatId;
-                STATE.settings = { ...STATE.settings, ...parsed.settings };
+                try {
+                    const parsed = JSON.parse(saved);
+                    STATE.chats = parsed.chats || [];
+                    STATE.currentChatId = parsed.currentChatId;
+                    STATE.settings = { ...STATE.settings, ...parsed.settings };
+                } catch (e) { console.error("Corrupt state", e); }
             }
             // Populate settings inputs
-            els.apiKeyInput.value = STATE.settings.apiKey || '';
-            els.modelInput.value = STATE.settings.model;
-            els.systemPromptInput.value = STATE.settings.systemPrompt;
-            els.currentModelDisplay.innerText = STATE.settings.model.split('/')[1] || STATE.settings.model;
+            if(els.apiKeyInput) els.apiKeyInput.value = STATE.settings.apiKey || '';
+            if(els.modelInput) els.modelInput.value = STATE.settings.model;
+            if(els.systemPromptInput) els.systemPromptInput.value = STATE.settings.systemPrompt;
+            if(els.currentModelDisplay) els.currentModelDisplay.innerText = STATE.settings.model.split('/')[1] || STATE.settings.model;
         }
 
         // --- Theme ---
@@ -286,12 +315,10 @@
             const icon = document.getElementById('theme-icon');
             if (STATE.settings.theme === 'dark') {
                 html.classList.add('dark');
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
+                if(icon) { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
             } else {
                 html.classList.remove('dark');
-                icon.classList.remove('fa-sun');
-                icon.classList.add('fa-moon');
+                if(icon) { icon.classList.remove('fa-sun'); icon.classList.add('fa-moon'); }
             }
         }
 
@@ -384,7 +411,8 @@
             if (isUser) {
                 bubble.innerText = content;
             } else {
-                bubble.innerHTML = marked.parse(content);
+                // Safety check for marked
+                bubble.innerHTML = (typeof marked !== 'undefined') ? marked.parse(content) : content;
             }
 
             div.appendChild(bubble);
@@ -503,7 +531,7 @@
                                 if (token) {
                                     fullContent += token;
                                     // Update UI real-time
-                                    bubbleDiv.innerHTML = marked.parse(fullContent);
+                                    bubbleDiv.innerHTML = (typeof marked !== 'undefined') ? marked.parse(fullContent) : fullContent;
                                     // Auto scroll only if near bottom
                                     scrollToBottom(); 
                                 }
@@ -517,9 +545,11 @@
                 saveState();
 
                 // Apply Syntax Highlighting to new content
-                document.querySelectorAll('pre code').forEach((block) => {
-                    highlight.highlightElement(block);
-                });
+                if (typeof highlight !== 'undefined') {
+                    document.querySelectorAll('pre code').forEach((block) => {
+                        highlight.highlightElement(block);
+                    });
+                }
 
             } catch (error) {
                 bubbleDiv.innerHTML = `<span class="text-red-500">Error: ${error.message}</span>`;
@@ -598,7 +628,7 @@
 
         // Close dropdowns when clicking outside
         document.addEventListener('click', (e) => {
-            if (!els.chatOptionsBtn.contains(e.target) && !els.chatOptionsMenu.contains(e.target)) {
+            if (els.chatOptionsBtn && !els.chatOptionsBtn.contains(e.target) && !els.chatOptionsMenu.contains(e.target)) {
                 els.chatOptionsMenu.classList.add('hidden');
             }
         });
