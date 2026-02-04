@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Universal AI Chat - Voice & Vision</title>
+    <title>Universal AI - Vision & Voice Fixed</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -28,12 +28,11 @@
         .prose pre { background: #1e1e1e !important; padding: 1rem; border-radius: 0.75rem; color: #fff; }
         .voice-bar { width: 4px; background: #3b82f6; border-radius: 4px; animation: wave 1s infinite; }
         @keyframes wave { 0%, 100% { height: 8px; } 50% { height: 20px; } }
-        .img-preview-container { transition: all 0.2s ease-in-out; }
     </style>
 </head>
 <body class="bg-gemini-50 text-slate-800 dark:bg-gemini-900 dark:text-slate-100 transition-colors">
 
-    <div id="loading" class="fixed inset-0 z-[100] bg-white dark:bg-slate-900 flex items-center justify-center font-bold">Initializing Vision System...</div>
+    <div id="loading" class="fixed inset-0 z-[100] bg-white dark:bg-slate-900 flex items-center justify-center font-bold text-blue-600">Syncing Vision & Voice...</div>
 
     <div id="app" class="hidden flex h-full w-full overflow-hidden">
         
@@ -52,37 +51,32 @@
 
         <main class="flex-1 flex flex-col h-full bg-white dark:bg-gemini-900 relative">
             <header class="h-14 flex items-center justify-between px-4 border-b dark:border-slate-800">
-                <button onclick="toggleSidebar()" class="lg:hidden"><i class="fa-solid fa-bars"></i></button>
-                <div class="text-[10px] uppercase font-bold tracking-widest bg-blue-100 dark:bg-blue-900 text-blue-600 px-2 py-1 rounded">Vision + Voice Active</div>
-                <button onclick="stopSpeaking()" id="stop-voice-btn" class="hidden text-xs bg-red-500 text-white px-3 py-1 rounded-full animate-pulse">Stop Voice</button>
+                <button onclick="toggleSidebar()" class="lg:hidden p-2"><i class="fa-solid fa-bars"></i></button>
+                <div class="text-[10px] uppercase font-bold tracking-widest bg-blue-100 dark:bg-blue-900 text-blue-600 px-3 py-1 rounded-full">System Online</div>
+                <button onclick="stopSpeaking()" id="stop-voice-btn" class="hidden text-xs bg-red-500 text-white px-3 py-1 rounded-full animate-pulse"><i class="fa-solid fa-stop mr-1"></i> Stop Voice</button>
             </header>
 
             <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6"></div>
 
             <div class="p-4 max-w-4xl mx-auto w-full">
-                <div id="img-preview-box" class="hidden flex p-2 gap-2 mb-2 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit relative">
-                    <img id="preview-img" src="" class="h-20 w-20 object-cover rounded-lg border dark:border-slate-700">
-                    <button onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg"><i class="fa-solid fa-xmark"></i></button>
+                <div id="img-preview-box" class="hidden flex p-2 gap-2 mb-2 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit relative border dark:border-slate-700 shadow-sm">
+                    <img id="preview-img" src="" class="h-20 w-20 object-cover rounded-lg">
+                    <button onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg"><i class="fa-solid fa-xmark text-xs"></i></button>
                 </div>
 
                 <div id="voice-indicator" class="hidden flex justify-center gap-1 mb-2">
                     <div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div>
                 </div>
 
-                <div class="relative flex items-end gap-2 bg-slate-100 dark:bg-slate-800 rounded-3xl p-2 border-2 border-transparent focus-within:border-blue-500 transition-all">
+                <div class="relative flex items-end gap-2 bg-slate-100 dark:bg-slate-800 rounded-3xl p-2 border-2 border-transparent focus-within:border-blue-500 transition-all shadow-sm">
                     <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
-                    
-                    <button onclick="document.getElementById('file-input').click()" class="p-3 text-slate-500 hover:text-blue-500 transition-colors">
-                        <i class="fa-solid fa-circle-plus text-xl"></i>
-                    </button>
+                    <button onclick="document.getElementById('file-input').click()" class="p-3 text-slate-500 hover:text-blue-500"><i class="fa-solid fa-circle-plus text-xl"></i></button>
 
-                    <textarea id="user-input" rows="1" placeholder="Type or upload image..." class="w-full bg-transparent border-0 focus:ring-0 py-3 px-2 resize-none max-h-48" onkeydown="handleKeyDown(event)"></textarea>
+                    <textarea id="user-input" rows="1" placeholder="Type or share image..." class="w-full bg-transparent border-0 focus:ring-0 py-3 px-2 resize-none max-h-48" onkeydown="handleKeyDown(event)"></textarea>
                     
-                    <button onclick="startVoiceInput()" class="p-3 text-slate-500 hover:text-blue-500 transition-colors">
-                        <i class="fa-solid fa-microphone"></i>
-                    </button>
+                    <button onclick="startVoiceInput()" class="p-3 text-slate-500 hover:text-blue-500"><i class="fa-solid fa-microphone"></i></button>
                     
-                    <button id="send-btn" onclick="sendMessage()" class="p-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all disabled:opacity-50">
+                    <button id="send-btn" onclick="sendMessage()" class="p-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-50">
                         <i class="fa-solid fa-paper-plane" id="send-icon"></i>
                     </button>
                 </div>
@@ -92,18 +86,18 @@
 
     <div id="settings-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl w-full max-w-md shadow-2xl">
-            <h2 class="text-xl font-bold mb-4">Settings</h2>
+            <h2 class="text-xl font-bold mb-4">API Settings</h2>
             <div class="space-y-4">
                 <div>
                     <label class="text-xs font-bold text-slate-500 uppercase">OpenRouter Key</label>
                     <input type="password" id="api-key-input" class="w-full p-3 rounded-xl border dark:bg-slate-800 dark:border-slate-700 mt-1">
                 </div>
                 <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase">Vision Model (e.g., google/gemini-2.0-flash-exp:free)</label>
-                    <input type="text" id="model-input" class="w-full p-3 rounded-xl border dark:bg-slate-800 dark:border-slate-700 mt-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Model (Vision Supported)</label>
+                    <input type="text" id="model-input" value="google/gemini-2.0-flash-exp:free" class="w-full p-3 rounded-xl border dark:bg-slate-800 dark:border-slate-700 mt-1">
                 </div>
             </div>
-            <button onclick="saveSettings()" class="w-full mt-6 bg-blue-600 text-white py-3 rounded-xl font-bold">Save</button>
+            <button onclick="saveSettings()" class="w-full mt-6 bg-blue-600 text-white py-3 rounded-xl font-bold">Save Changes</button>
         </div>
     </div>
 
@@ -114,11 +108,14 @@
             settings: { apiKey: '', model: 'google/gemini-2.0-flash-exp:free', theme: 'light' },
             isThinking: false,
             wasVoiceInput: false,
-            attachedImage: null // Stores base64 string
+            attachedImage: null,
+            isRecording: false // Voice status flag
         };
 
+        let recognition;
+
         window.onload = () => {
-            const saved = localStorage.getItem('gemini_v5_data');
+            const saved = localStorage.getItem('gemini_v6_data');
             if (saved) STATE = { ...STATE, ...JSON.parse(saved) };
             if (STATE.chats.length === 0) createNewChat();
             
@@ -134,11 +131,103 @@
             document.getElementById('app').classList.remove('hidden');
         };
 
-        // --- Image Handling ---
+        // --- Multi-modal Formatting Fix ---
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const text = input.value.trim();
+            if (!text && !STATE.attachedImage || STATE.isThinking) return;
+
+            if (!STATE.settings.apiKey) { alert("Add API Key in Settings!"); return; }
+
+            STATE.isThinking = true;
+            toggleLoading(true);
+            
+            const chat = STATE.chats.find(c => c.id === STATE.currentId);
+            
+            // Build the standard OpenRouter vision-compatible message
+            let messageContent;
+            if (STATE.attachedImage) {
+                messageContent = [
+                    { type: "text", text: text || "Analyze this image." },
+                    { type: "image_url", image_url: { url: STATE.attachedImage } }
+                ];
+            } else {
+                messageContent = text;
+            }
+
+            chat.messages.push({ role: 'user', content: messageContent });
+            if (chat.title === 'New Chat') chat.title = text ? text.substring(0, 25) : "Image Inquiry";
+            
+            const usedVoiceTurn = STATE.wasVoiceInput;
+            STATE.wasVoiceInput = false;
+            
+            input.value = '';
+            clearImage();
+            renderChat();
+
+            try {
+                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: { 
+                        "Authorization": `Bearer ${STATE.settings.apiKey}`, 
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": window.location.href, 
+                        "X-Title": "Universal AI"
+                    },
+                    body: JSON.stringify({ model: STATE.settings.model, messages: chat.messages })
+                });
+
+                const data = await response.json();
+                if (data.choices && data.choices[0]) {
+                    const aiMsg = data.choices[0].message;
+                    chat.messages.push(aiMsg);
+                    renderChat();
+                    if (usedVoiceTurn) speakResponse(aiMsg.content);
+                } else {
+                    throw new Error("API Limit or Error");
+                }
+            } catch (err) {
+                chat.messages.push({ role: 'assistant', content: "⚠️ API Error: Ensure your model supports vision and API key is valid." });
+                renderChat();
+            } finally {
+                STATE.isThinking = false;
+                toggleLoading(false);
+                updateUI();
+            }
+        }
+
+        // --- Voice Error Fix (Already Started) ---
+        function initVoiceRecognition() {
+            const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!Speech) return;
+            recognition = new Speech();
+            recognition.continuous = false;
+            recognition.onstart = () => { STATE.isRecording = true; document.getElementById('voice-indicator').classList.remove('hidden'); };
+            recognition.onend = () => { STATE.isRecording = false; document.getElementById('voice-indicator').classList.add('hidden'); };
+            recognition.onresult = (e) => {
+                document.getElementById('user-input').value = e.results[0][0].transcript;
+                STATE.wasVoiceInput = true;
+                sendMessage();
+            };
+        }
+
+        function startVoiceInput() {
+            if (!recognition) return;
+            if (STATE.isRecording) {
+                recognition.stop();
+                return;
+            }
+            try {
+                recognition.start();
+            } catch (e) {
+                console.warn("Recognition already active", e);
+            }
+        }
+
+        // --- Image UI Logic ---
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
-            
             const reader = new FileReader();
             reader.onload = (event) => {
                 STATE.attachedImage = event.target.result;
@@ -154,28 +243,6 @@
             document.getElementById('img-preview-box').classList.add('hidden');
         }
 
-        function createNewChat() {
-            const id = Date.now().toString();
-            STATE.chats.unshift({ id, title: 'New Chat', messages: [] });
-            STATE.currentId = id;
-            updateUI();
-        }
-
-        function updateUI() {
-            localStorage.setItem('gemini_v5_data', JSON.stringify(STATE));
-            renderSidebar();
-            renderChat();
-        }
-
-        function renderSidebar() {
-            const list = document.getElementById('chat-list');
-            list.innerHTML = '';
-            STATE.chats.forEach(chat => {
-                const isActive = chat.id === STATE.currentId;
-                list.innerHTML += `<div onclick="switchChat('${chat.id}')" class="p-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 ${isActive ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'}"><i class="fa-regular fa-comment"></i><span class="truncate text-sm">${chat.title}</span></div>`;
-            });
-        }
-
         function renderChat() {
             const container = document.getElementById('chat-container');
             const chat = STATE.chats.find(c => c.id === STATE.currentId);
@@ -183,121 +250,53 @@
             
             chat.messages.forEach(msg => {
                 const isUser = msg.role === 'user';
-                let contentHTML = '';
-
-                // If message is vision-structured (array) or simple text
+                let html = '';
                 if (Array.isArray(msg.content)) {
-                    msg.content.forEach(item => {
-                        if (item.type === 'text') contentHTML += marked.parse(item.text);
-                        if (item.type === 'image_url') contentHTML += `<img src="${item.image_url.url}" class="max-w-xs rounded-lg my-2 shadow-md">`;
+                    msg.content.forEach(part => {
+                        if (part.type === 'text') html += marked.parse(part.text);
+                        if (part.type === 'image_url') html += `<img src="${part.image_url.url}" class="max-w-xs rounded-lg my-2 border">`;
                     });
                 } else {
-                    contentHTML = marked.parse(msg.content);
+                    html = marked.parse(msg.content);
                 }
 
                 container.innerHTML += `
-                    <div class="flex ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in">
-                        <div class="max-w-[85%] p-4 rounded-2xl ${isUser ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 dark:bg-slate-800 dark:text-slate-100 rounded-tl-none prose dark:prose-invert'}">
-                            ${contentHTML}
+                    <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-[85%] p-4 rounded-2xl shadow-sm ${isUser ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 dark:bg-slate-800 dark:text-slate-100 rounded-tl-none prose dark:prose-invert'}">
+                            ${html}
                         </div>
                     </div>`;
             });
             container.scrollTop = container.scrollHeight;
         }
 
-        async function sendMessage() {
-            const input = document.getElementById('user-input');
-            const text = input.value.trim();
-            if (!text && !STATE.attachedImage || STATE.isThinking) return;
-
-            if (!STATE.settings.apiKey) { alert("Please add API Key in Settings!"); return; }
-
-            STATE.isThinking = true;
-            toggleLoading(true);
-            
-            const chat = STATE.chats.find(c => c.id === STATE.currentId);
-            
-            // Build the Message Object
-            let userMessage;
-            if (STATE.attachedImage) {
-                userMessage = {
-                    role: 'user',
-                    content: [
-                        { type: 'text', text: text || "What is in this image?" },
-                        { type: 'image_url', image_url: { url: STATE.attachedImage } }
-                    ]
-                };
-            } else {
-                userMessage = { role: 'user', content: text };
-            }
-
-            chat.messages.push(userMessage);
-            if (chat.title === 'New Chat') chat.title = text ? text.substring(0, 25) : "Image Analysis";
-            
-            const usedVoice = STATE.wasVoiceInput;
-            STATE.wasVoiceInput = false;
-            
-            input.value = '';
-            clearImage();
-            renderChat();
-
-            try {
-                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${STATE.settings.apiKey}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: STATE.settings.model, messages: chat.messages })
-                });
-
-                const data = await response.json();
-                const aiResponse = data.choices[0].message;
-                chat.messages.push(aiResponse);
-                
-                renderChat();
-                if (usedVoice) speakResponse(aiResponse.content);
-
-            } catch (err) {
-                console.error(err);
-            } finally {
-                STATE.isThinking = false;
-                toggleLoading(false);
-                updateUI();
-            }
-        }
-
-        // --- Voice Logic (Same as before) ---
-        function initVoiceRecognition() {
-            const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!Speech) return;
-            const rec = new Speech();
-            rec.onresult = (e) => {
-                document.getElementById('user-input').value = e.results[0][0].transcript;
-                STATE.wasVoiceInput = true;
-                sendMessage();
-            };
-            window.startVoiceInput = () => rec.start();
-        }
-
+        // --- Core Helpers ---
         function speakResponse(text) {
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text.replace(/[#*`]/g, ''));
+            utterance.onstart = () => document.getElementById('stop-voice-btn').classList.remove('hidden');
+            utterance.onend = () => document.getElementById('stop-voice-btn').classList.add('hidden');
             window.speechSynthesis.speak(utterance);
         }
-
+        function stopSpeaking() { window.speechSynthesis.cancel(); document.getElementById('stop-voice-btn').classList.add('hidden'); }
+        function createNewChat() { STATE.chats.unshift({ id: Date.now().toString(), title: 'New Chat', messages: [] }); STATE.currentId = STATE.chats[0].id; updateUI(); }
         function switchChat(id) { STATE.currentId = id; updateUI(); }
-        function toggleLoading(show) { 
-            const icon = document.getElementById('send-icon');
-            icon.className = show ? "fa-solid fa-circle-notch animate-spin" : "fa-solid fa-paper-plane";
-        }
+        function updateUI() { localStorage.setItem('gemini_v6_data', JSON.stringify(STATE)); renderSidebar(); renderChat(); }
+        function toggleLoading(show) { document.getElementById('send-icon').className = show ? "fa-solid fa-circle-notch animate-spin" : "fa-solid fa-paper-plane"; }
         function handleKeyDown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
         function toggleSettings() { document.getElementById('settings-modal').classList.toggle('hidden'); }
-        function saveSettings() {
-            STATE.settings.apiKey = document.getElementById('api-key-input').value;
-            STATE.settings.model = document.getElementById('model-input').value;
-            updateUI(); toggleSettings();
-        }
+        function saveSettings() { STATE.settings.apiKey = document.getElementById('api-key-input').value; STATE.settings.model = document.getElementById('model-input').value; updateUI(); toggleSettings(); }
         function toggleTheme() { STATE.settings.theme = STATE.settings.theme === 'light' ? 'dark' : 'light'; applyTheme(); updateUI(); }
         function applyTheme() { document.documentElement.classList.toggle('dark', STATE.settings.theme === 'dark'); }
+        function renderSidebar() {
+            const list = document.getElementById('chat-list');
+            list.innerHTML = '';
+            STATE.chats.forEach(chat => {
+                const isActive = chat.id === STATE.currentId;
+                list.innerHTML += `<div onclick="switchChat('${chat.id}')" class="p-3 rounded-xl cursor-pointer flex items-center gap-3 ${isActive ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'}"><i class="fa-regular fa-comment"></i><span class="truncate text-sm">${chat.title}</span></div>`;
+            });
+        }
     </script>
 </body>
 </html>
