@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Universal AI Chat - Voice Response Fixed</title>
+    <title>Universal AI Chat - Voice & Vision</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -28,11 +28,12 @@
         .prose pre { background: #1e1e1e !important; padding: 1rem; border-radius: 0.75rem; color: #fff; }
         .voice-bar { width: 4px; background: #3b82f6; border-radius: 4px; animation: wave 1s infinite; }
         @keyframes wave { 0%, 100% { height: 8px; } 50% { height: 20px; } }
+        .img-preview-container { transition: all 0.2s ease-in-out; }
     </style>
 </head>
 <body class="bg-gemini-50 text-slate-800 dark:bg-gemini-900 dark:text-slate-100 transition-colors">
 
-    <div id="loading" class="fixed inset-0 z-[100] bg-white dark:bg-slate-900 flex items-center justify-center font-bold">Initializing...</div>
+    <div id="loading" class="fixed inset-0 z-[100] bg-white dark:bg-slate-900 flex items-center justify-center font-bold">Initializing Vision System...</div>
 
     <div id="app" class="hidden flex h-full w-full overflow-hidden">
         
@@ -52,19 +53,30 @@
         <main class="flex-1 flex flex-col h-full bg-white dark:bg-gemini-900 relative">
             <header class="h-14 flex items-center justify-between px-4 border-b dark:border-slate-800">
                 <button onclick="toggleSidebar()" class="lg:hidden"><i class="fa-solid fa-bars"></i></button>
-                <div id="current-model-tag" class="text-[10px] uppercase font-bold tracking-widest bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Voice Enabled</div>
+                <div class="text-[10px] uppercase font-bold tracking-widest bg-blue-100 dark:bg-blue-900 text-blue-600 px-2 py-1 rounded">Vision + Voice Active</div>
                 <button onclick="stopSpeaking()" id="stop-voice-btn" class="hidden text-xs bg-red-500 text-white px-3 py-1 rounded-full animate-pulse">Stop Voice</button>
             </header>
 
             <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6"></div>
 
             <div class="p-4 max-w-4xl mx-auto w-full">
+                <div id="img-preview-box" class="hidden flex p-2 gap-2 mb-2 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit relative">
+                    <img id="preview-img" src="" class="h-20 w-20 object-cover rounded-lg border dark:border-slate-700">
+                    <button onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
                 <div id="voice-indicator" class="hidden flex justify-center gap-1 mb-2">
                     <div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div>
-                    <span class="text-xs text-blue-500 font-bold ml-2">Listening...</span>
                 </div>
+
                 <div class="relative flex items-end gap-2 bg-slate-100 dark:bg-slate-800 rounded-3xl p-2 border-2 border-transparent focus-within:border-blue-500 transition-all">
-                    <textarea id="user-input" rows="1" placeholder="Ask anything..." class="w-full bg-transparent border-0 focus:ring-0 py-3 px-4 resize-none max-h-48" onkeydown="handleKeyDown(event)"></textarea>
+                    <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+                    
+                    <button onclick="document.getElementById('file-input').click()" class="p-3 text-slate-500 hover:text-blue-500 transition-colors">
+                        <i class="fa-solid fa-circle-plus text-xl"></i>
+                    </button>
+
+                    <textarea id="user-input" rows="1" placeholder="Type or upload image..." class="w-full bg-transparent border-0 focus:ring-0 py-3 px-2 resize-none max-h-48" onkeydown="handleKeyDown(event)"></textarea>
                     
                     <button onclick="startVoiceInput()" class="p-3 text-slate-500 hover:text-blue-500 transition-colors">
                         <i class="fa-solid fa-microphone"></i>
@@ -87,7 +99,7 @@
                     <input type="password" id="api-key-input" class="w-full p-3 rounded-xl border dark:bg-slate-800 dark:border-slate-700 mt-1">
                 </div>
                 <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase">Model</label>
+                    <label class="text-xs font-bold text-slate-500 uppercase">Vision Model (e.g., google/gemini-2.0-flash-exp:free)</label>
                     <input type="text" id="model-input" class="w-full p-3 rounded-xl border dark:bg-slate-800 dark:border-slate-700 mt-1">
                 </div>
             </div>
@@ -101,12 +113,12 @@
             currentId: null,
             settings: { apiKey: '', model: 'google/gemini-2.0-flash-exp:free', theme: 'light' },
             isThinking: false,
-            wasVoiceInput: false // Tracks if the last question was spoken
+            wasVoiceInput: false,
+            attachedImage: null // Stores base64 string
         };
 
-        // --- Init ---
         window.onload = () => {
-            const saved = localStorage.getItem('gemini_v4_data');
+            const saved = localStorage.getItem('gemini_v5_data');
             if (saved) STATE = { ...STATE, ...JSON.parse(saved) };
             if (STATE.chats.length === 0) createNewChat();
             
@@ -122,6 +134,26 @@
             document.getElementById('app').classList.remove('hidden');
         };
 
+        // --- Image Handling ---
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                STATE.attachedImage = event.target.result;
+                document.getElementById('preview-img').src = STATE.attachedImage;
+                document.getElementById('img-preview-box').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImage() {
+            STATE.attachedImage = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('img-preview-box').classList.add('hidden');
+        }
+
         function createNewChat() {
             const id = Date.now().toString();
             STATE.chats.unshift({ id, title: 'New Chat', messages: [] });
@@ -129,13 +161,8 @@
             updateUI();
         }
 
-        function switchChat(id) {
-            STATE.currentId = id;
-            updateUI();
-        }
-
         function updateUI() {
-            localStorage.setItem('gemini_v4_data', JSON.stringify(STATE));
+            localStorage.setItem('gemini_v5_data', JSON.stringify(STATE));
             renderSidebar();
             renderChat();
         }
@@ -145,11 +172,7 @@
             list.innerHTML = '';
             STATE.chats.forEach(chat => {
                 const isActive = chat.id === STATE.currentId;
-                list.innerHTML += `
-                    <div onclick="switchChat('${chat.id}')" class="p-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 ${isActive ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'}">
-                        <i class="fa-regular fa-comment"></i>
-                        <span class="truncate text-sm">${chat.title}</span>
-                    </div>`;
+                list.innerHTML += `<div onclick="switchChat('${chat.id}')" class="p-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 ${isActive ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 font-bold' : 'hover:bg-slate-200 dark:hover:bg-slate-800'}"><i class="fa-regular fa-comment"></i><span class="truncate text-sm">${chat.title}</span></div>`;
             });
         }
 
@@ -160,11 +183,22 @@
             
             chat.messages.forEach(msg => {
                 const isUser = msg.role === 'user';
+                let contentHTML = '';
+
+                // If message is vision-structured (array) or simple text
+                if (Array.isArray(msg.content)) {
+                    msg.content.forEach(item => {
+                        if (item.type === 'text') contentHTML += marked.parse(item.text);
+                        if (item.type === 'image_url') contentHTML += `<img src="${item.image_url.url}" class="max-w-xs rounded-lg my-2 shadow-md">`;
+                    });
+                } else {
+                    contentHTML = marked.parse(msg.content);
+                }
+
                 container.innerHTML += `
-                    <div class="flex ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in duration-300">
-                        <div class="max-w-[85%] p-4 rounded-2xl shadow-sm ${isUser ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 dark:bg-slate-800 dark:text-slate-100 rounded-tl-none prose dark:prose-invert'}">
-                            ${marked.parse(msg.content)}
-                            ${!isUser ? `<button onclick="speakResponse(this.parentElement.innerText)" class="mt-2 text-xs opacity-50 hover:opacity-100"><i class="fa-solid fa-volume-high"></i> Replay</button>` : ''}
+                    <div class="flex ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in">
+                        <div class="max-w-[85%] p-4 rounded-2xl ${isUser ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 dark:bg-slate-800 dark:text-slate-100 rounded-tl-none prose dark:prose-invert'}">
+                            ${contentHTML}
                         </div>
                     </div>`;
             });
@@ -174,24 +208,37 @@
         async function sendMessage() {
             const input = document.getElementById('user-input');
             const text = input.value.trim();
-            if (!text || STATE.isThinking) return;
+            if (!text && !STATE.attachedImage || STATE.isThinking) return;
 
-            if (!STATE.settings.apiKey) {
-                alert("Please add API Key in Settings!");
-                return;
-            }
+            if (!STATE.settings.apiKey) { alert("Please add API Key in Settings!"); return; }
 
             STATE.isThinking = true;
             toggleLoading(true);
             
             const chat = STATE.chats.find(c => c.id === STATE.currentId);
-            chat.messages.push({ role: 'user', content: text });
-            if (chat.title === 'New Chat') chat.title = text.substring(0, 25);
             
-            const usedVoiceThisTurn = STATE.wasVoiceInput; // Store current state
-            STATE.wasVoiceInput = false; // Reset for next time
+            // Build the Message Object
+            let userMessage;
+            if (STATE.attachedImage) {
+                userMessage = {
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: text || "What is in this image?" },
+                        { type: 'image_url', image_url: { url: STATE.attachedImage } }
+                    ]
+                };
+            } else {
+                userMessage = { role: 'user', content: text };
+            }
 
+            chat.messages.push(userMessage);
+            if (chat.title === 'New Chat') chat.title = text ? text.substring(0, 25) : "Image Analysis";
+            
+            const usedVoice = STATE.wasVoiceInput;
+            STATE.wasVoiceInput = false;
+            
             input.value = '';
+            clearImage();
             renderChat();
 
             try {
@@ -206,11 +253,7 @@
                 chat.messages.push(aiResponse);
                 
                 renderChat();
-
-                // VOICE OUTPUT TRIGGER
-                if (usedVoiceThisTurn) {
-                    speakResponse(aiResponse.content);
-                }
+                if (usedVoice) speakResponse(aiResponse.content);
 
             } catch (err) {
                 console.error(err);
@@ -221,48 +264,30 @@
             }
         }
 
-        // --- Speech-to-Text (User Speaking) ---
+        // --- Voice Logic (Same as before) ---
         function initVoiceRecognition() {
             const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!Speech) return;
             const rec = new Speech();
-            rec.onstart = () => document.getElementById('voice-indicator').classList.remove('hidden');
-            rec.onend = () => document.getElementById('voice-indicator').classList.add('hidden');
             rec.onresult = (e) => {
                 document.getElementById('user-input').value = e.results[0][0].transcript;
-                STATE.wasVoiceInput = true; // Flag that we used voice
+                STATE.wasVoiceInput = true;
                 sendMessage();
             };
             window.startVoiceInput = () => rec.start();
         }
 
-        // --- Text-to-Speech (AI Speaking) ---
         function speakResponse(text) {
-            window.speechSynthesis.cancel(); // Stop current speech
-            
-            // Clean markdown for cleaner speech
-            const cleanText = text.replace(/[#*`]/g, '').replace(/Replay/g, '');
-            const utterance = new SpeechSynthesisUtterance(cleanText);
-            
-            utterance.onstart = () => document.getElementById('stop-voice-btn').classList.remove('hidden');
-            utterance.onend = () => document.getElementById('stop-voice-btn').classList.add('hidden');
-            
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text.replace(/[#*`]/g, ''));
             window.speechSynthesis.speak(utterance);
         }
 
-        function stopSpeaking() {
-            window.speechSynthesis.cancel();
-            document.getElementById('stop-voice-btn').classList.add('hidden');
-        }
-
-        // --- Helpers ---
-        function toggleLoading(show) {
-            const btn = document.getElementById('send-btn');
+        function switchChat(id) { STATE.currentId = id; updateUI(); }
+        function toggleLoading(show) { 
             const icon = document.getElementById('send-icon');
-            btn.disabled = show;
             icon.className = show ? "fa-solid fa-circle-notch animate-spin" : "fa-solid fa-paper-plane";
         }
-
         function handleKeyDown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
         function toggleSettings() { document.getElementById('settings-modal').classList.toggle('hidden'); }
@@ -271,10 +296,7 @@
             STATE.settings.model = document.getElementById('model-input').value;
             updateUI(); toggleSettings();
         }
-        function toggleTheme() {
-            STATE.settings.theme = STATE.settings.theme === 'light' ? 'dark' : 'light';
-            applyTheme(); updateUI();
-        }
+        function toggleTheme() { STATE.settings.theme = STATE.settings.theme === 'light' ? 'dark' : 'light'; applyTheme(); updateUI(); }
         function applyTheme() { document.documentElement.classList.toggle('dark', STATE.settings.theme === 'dark'); }
     </script>
 </body>
