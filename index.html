@@ -77,7 +77,7 @@
         const synth = window.speechSynthesis;
 
         window.onload = () => {
-            const saved = JSON.parse(localStorage.getItem('robot_final_v1')) || {};
+            const saved = JSON.parse(localStorage.getItem('robot_final_v1') || '{}');
             Object.assign(STATE, saved);
             document.getElementById('api-key').value = STATE.apiKey || '';
             document.getElementById('model-id').value = STATE.model || 'google/gemini-2.0-flash-exp:free';
@@ -85,14 +85,25 @@
             initMic();
             refreshUI();
             
-            // Watchdog Timer: Ensures Mic restarts if it dies
+            // Dynamic Greeting Logic
+            const triggerGreeting = () => {
+                const hour = new Date().getHours();
+                let welcome = "Good ";
+                if (hour < 12) welcome += "Morning";
+                else if (hour < 17) welcome += "Afternoon";
+                else welcome += "Evening";
+                
+                speak(`${welcome} Gopal! How are you?`);
+                document.removeEventListener('click', triggerGreeting);
+            };
+            document.addEventListener('click', triggerGreeting);
+
             setInterval(() => {
                 if (STATE.isRobotOn && !STATE.isAITalking && (!recognition || recognition.readyState !== 'listening')) {
                     try { recognition.start(); } catch(e) {}
                 }
             }, 1000);
         };
-
         function initMic() {
             const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new Speech();
@@ -131,13 +142,17 @@
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${STATE.apiKey.trim()}`
                     },
-                    body: JSON.stringify({
-                        model: STATE.model.trim(),
-                        messages: [
-                            { role: "system", content: "Reply in the language the user uses. If they use Hindi/Hinglish, reply in Hindi. Keep it very short." },
-                            ...chat.messages.slice(-6)
-                        ]
-                    })
+                   
+                        body: JSON.stringify({
+                            model: STATE.model.trim(),
+                            messages: [
+                                { 
+                                  role: "system", 
+                                  content: "Your name is Jarvis. You are talking to Gopal. Always be polite to him. If he speaks in Hindi/Hinglish, reply in Hindi. If he speaks English, reply in English. Keep it concise." 
+                                },
+                                ...chat.messages.slice(-6)
+                            ]
+                        })
                 });
 
                 const data = await response.json();
