@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Companion - Pro Robot Mode</title>
+    <title>AI Robot - Voice Fix</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -12,60 +12,49 @@
     <style>
         body { height: 100dvh; overflow: hidden; font-family: 'Inter', sans-serif; }
         #chat-container { scroll-behavior: smooth; }
-        .orb-active {
-            box-shadow: 0 0 15px #3b82f6, 0 0 30px #3b82f6;
-            animation: pulse-orb 1.2s infinite;
-        }
-        @keyframes pulse-orb {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.6; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .ai-bubble { border-radius: 20px 20px 20px 0px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .orb-active { box-shadow: 0 0 20px #3b82f6; animation: pulse 1.2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+        .ai-bubble { border-radius: 20px 20px 20px 0px; }
         .user-bubble { border-radius: 20px 20px 0px 20px; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-colors">
+<body class="bg-slate-50 dark:bg-slate-900 transition-colors">
 
     <div id="app" class="flex h-full w-full overflow-hidden">
         
         <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-[280px] bg-white dark:bg-slate-800 transform -translate-x-full lg:translate-x-0 lg:static transition-transform flex flex-col border-r dark:border-slate-700">
             <div class="p-6">
-                <button onclick="createNewChat()" class="w-full bg-blue-600 text-white p-3 rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-plus"></i> New Chat
-                </button>
+                <button onclick="createNewChat()" class="w-full bg-blue-600 text-white p-3 rounded-2xl font-bold shadow-lg">New Chat</button>
             </div>
             <div id="chat-list" class="flex-1 overflow-y-auto px-4 space-y-2"></div>
             <div class="p-4 border-t dark:border-slate-700">
-                <button onclick="toggleSettings()" class="w-full text-left p-2 text-sm text-slate-500 hover:text-blue-500 flex items-center gap-2">
-                    <i class="fa-solid fa-gear"></i> Robot Settings
-                </button>
+                <button onclick="toggleSettings()" class="text-xs text-slate-500 font-bold uppercase tracking-widest"><i class="fa-solid fa-gear mr-2"></i>Configure API</button>
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col h-full relative">
-            <header class="h-16 flex items-center justify-between px-6 border-b dark:bg-slate-900 dark:border-slate-800">
+        <main class="flex-1 flex flex-col h-full relative bg-slate-50 dark:bg-slate-900">
+            <header class="h-16 flex items-center justify-between px-6 border-b dark:border-slate-800">
                 <button onclick="toggleSidebar()" class="lg:hidden text-2xl"><i class="fa-solid fa-bars-staggered"></i></button>
                 <div class="flex items-center gap-3">
                     <div id="status-orb" class="w-3 h-3 rounded-full bg-slate-400"></div>
                     <span id="status-text" class="text-[10px] font-black uppercase tracking-widest text-slate-400">Standby</span>
                 </div>
-                <button id="stop-btn" onclick="stopAI()" class="hidden bg-red-500 text-white px-4 py-1 rounded-full text-xs font-bold animate-pulse">STOP VOICE</button>
+                <button id="stop-btn" onclick="stopAI()" class="hidden bg-red-500 text-white px-4 py-1 rounded-full text-xs font-bold">STOP VOICE</button>
             </header>
 
             <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-10 space-y-8"></div>
 
             <div class="p-6 max-w-4xl mx-auto w-full">
                 <div id="preview-box" class="hidden mb-4 relative w-24">
-                    <img id="preview-img" class="w-24 h-24 object-cover rounded-2xl border-4 border-white shadow-xl">
+                    <img id="preview-img" class="w-24 h-24 object-cover rounded-2xl border-2 border-white shadow-xl">
                     <button onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <div class="bg-white dark:bg-slate-800 rounded-3xl p-3 shadow-2xl border dark:border-slate-700 flex items-end gap-2">
+                <div class="bg-white dark:bg-slate-800 rounded-3xl p-2 shadow-2xl border dark:border-slate-700 flex items-end gap-2">
                     <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleImage(event)">
                     <button onclick="document.getElementById('file-input').click()" class="p-4 text-slate-400 hover:text-blue-500"><i class="fa-solid fa-camera text-xl"></i></button>
                     
-                    <textarea id="user-input" rows="1" placeholder="Start speaking..." class="flex-1 bg-transparent border-0 focus:ring-0 py-4 resize-none max-h-32 text-lg" onkeydown="handleKey(event)"></textarea>
+                    <textarea id="user-input" rows="1" placeholder="Start speaking..." class="flex-1 bg-transparent border-0 focus:ring-0 py-4 resize-none max-h-32 text-lg text-slate-800 dark:text-white" onkeydown="handleKey(event)"></textarea>
                     
                     <button id="mic-btn" onclick="toggleRobotMode()" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-500 transition-all">
                         <i id="mic-icon" class="fa-solid fa-microphone-lines text-2xl"></i>
@@ -75,20 +64,19 @@
                         <i class="fa-solid fa-paper-plane"></i>
                     </button>
                 </div>
+                <p class="text-[10px] text-center mt-3 text-slate-400 font-bold uppercase tracking-widest">AI Robot Mode: Always listening when active</p>
             </div>
         </main>
     </div>
 
     <div id="settings" class="hidden fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-6">
         <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl w-full max-w-md shadow-2xl">
-            <h2 class="text-2xl font-bold mb-6">Configuration</h2>
+            <h2 class="text-xl font-bold mb-6">API Setup</h2>
             <div class="space-y-4">
-                <label class="block text-xs font-bold text-slate-500 uppercase">API Key</label>
-                <input type="password" id="api-key" placeholder="OpenRouter API Key" class="w-full p-4 rounded-xl border dark:bg-slate-700 dark:border-slate-600">
-                <label class="block text-xs font-bold text-slate-500 uppercase">Model</label>
-                <input type="text" id="model-id" value="google/gemini-2.0-flash-exp:free" class="w-full p-4 rounded-xl border dark:bg-slate-700 dark:border-slate-600">
+                <input type="password" id="api-key" placeholder="OpenRouter API Key" class="w-full p-4 rounded-xl border dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                <input type="text" id="model-id" value="google/gemini-2.0-flash-exp:free" class="w-full p-4 rounded-xl border dark:bg-slate-700 dark:border-slate-600 dark:text-white">
             </div>
-            <button onclick="saveSettings()" class="w-full mt-8 bg-blue-600 text-white p-4 rounded-xl font-bold shadow-lg">Save & Initialize</button>
+            <button onclick="saveSettings()" class="w-full mt-8 bg-blue-600 text-white p-4 rounded-xl font-bold">Connect Robot</button>
         </div>
     </div>
 
@@ -104,10 +92,9 @@
         };
 
         let recognition;
-        let hindiVoice = null;
 
         window.onload = () => {
-            const saved = localStorage.getItem('ai_robot_v10');
+            const saved = localStorage.getItem('ai_robot_final');
             if (saved) Object.assign(STATE, JSON.parse(saved));
             
             document.getElementById('api-key').value = STATE.apiKey || '';
@@ -115,22 +102,12 @@
 
             if (STATE.chats.length === 0) createNewChat();
             
-            initVoices();
             initSpeechEngine();
             refreshUI();
+            
+            // Prime the Speech Synthesis system
+            window.speechSynthesis.getVoices();
         };
-
-        function initVoices() {
-            const loadVoices = () => {
-                const voices = window.speechSynthesis.getVoices();
-                // Priority: Google Hindi -> Microsoft Hemant -> Any Hindi -> First available
-                hindiVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('hi')) || 
-                             voices.find(v => v.lang.includes('hi')) || 
-                             voices[0];
-            };
-            window.speechSynthesis.onvoiceschanged = loadVoices;
-            loadVoices();
-        }
 
         function initSpeechEngine() {
             const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -145,63 +122,81 @@
             
             recognition.onend = () => {
                 updateStatus(false);
-                // Auto-Restart logic
                 if (STATE.isRobotActive && !STATE.isThinking && !window.speechSynthesis.speaking) {
-                    setTimeout(() => {
-                        if (STATE.isRobotActive) {
-                            try { recognition.start(); } catch(e) { console.log("Mic restart prevented"); }
-                        }
-                    }, 400);
+                    setTimeout(() => { if (STATE.isRobotActive) try { recognition.start(); } catch(e) {} }, 400);
                 }
             };
 
             recognition.onresult = (e) => {
                 const text = e.results[0][0].transcript;
-                if (text.trim().length > 0) {
+                if (text.trim()) {
                     document.getElementById('user-input').value = text;
                     sendMessage();
                 }
             };
+        }
 
-            recognition.onerror = (event) => {
-                console.log("Speech Error: " + event.error);
-                if (event.error === 'not-allowed') {
-                    alert("Please allow microphone access!");
-                    STATE.isRobotActive = false;
-                    refreshUI();
+        // --- THE CRITICAL VOICE FIX ---
+        function speak(text) {
+            // Cancel any current speaking
+            window.speechSynthesis.cancel();
+            
+            // Stop listening while speaking to avoid feedback
+            if (STATE.isRobotActive) recognition.stop();
+
+            const utterance = new SpeechSynthesisUtterance(text.replace(/[#*`]/g, ''));
+            
+            // Force browser to fetch voices again
+            const voices = window.speechSynthesis.getVoices();
+            
+            // Find best Hindi voice
+            const hindiVoice = voices.find(v => v.lang.includes('hi')) || voices.find(v => v.lang.includes('IN'));
+            
+            if (hindiVoice) {
+                utterance.voice = hindiVoice;
+                utterance.lang = 'hi-IN';
+            } else {
+                utterance.lang = 'hi-IN'; // Fallback to lang code
+            }
+
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+
+            utterance.onstart = () => {
+                document.getElementById('stop-btn').classList.remove('hidden');
+            };
+
+            utterance.onend = () => {
+                document.getElementById('stop-btn').classList.add('hidden');
+                if (STATE.isRobotActive) {
+                    setTimeout(() => { 
+                        if (STATE.isRobotActive && !window.speechSynthesis.speaking) {
+                            try { recognition.start(); } catch(e) {} 
+                        }
+                    }, 600);
                 }
             };
+
+            // Some browsers require this to be called on a user-click context 
+            // but since this is called in the promise of the fetch, it should work.
+            window.speechSynthesis.speak(utterance);
         }
 
         function toggleRobotMode() {
-            // Wake up Audio Context for mobile/chrome
-            if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
-            
             STATE.isRobotActive = !STATE.isRobotActive;
             const btn = document.getElementById('mic-btn');
-            const icon = document.getElementById('mic-icon');
             
             if (STATE.isRobotActive) {
-                btn.className = "p-4 rounded-2xl bg-blue-600 text-white transition-all shadow-lg";
+                // Audio Context Wakeup
+                const silence = new SpeechSynthesisUtterance("");
+                window.speechSynthesis.speak(silence);
+                
+                btn.className = "p-4 rounded-2xl bg-blue-600 text-white transition-all shadow-lg orb-active";
                 try { recognition.start(); } catch(e) {}
             } else {
                 btn.className = "p-4 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-500 transition-all";
                 recognition.stop();
                 window.speechSynthesis.cancel();
-            }
-        }
-
-        function updateStatus(listening) {
-            const orb = document.getElementById('status-orb');
-            const text = document.getElementById('status-text');
-            if (listening) {
-                orb.className = "w-3 h-3 rounded-full bg-blue-500 orb-active";
-                text.innerText = "Robot Listening";
-                text.className = "text-[10px] font-black uppercase tracking-widest text-blue-500";
-            } else {
-                orb.className = "w-3 h-3 rounded-full bg-slate-400";
-                text.innerText = "Standby";
-                text.className = "text-[10px] font-black uppercase tracking-widest text-slate-400";
             }
         }
 
@@ -214,12 +209,10 @@
             STATE.isThinking = true;
             const chat = STATE.chats.find(c => c.id === STATE.currentId);
             
-            if (chat.messages.length === 0) {
-                chat.title = text ? text.substring(0, 30) : "Image Interaction";
-            }
+            if (chat.messages.length === 0) chat.title = text ? text.substring(0, 30) : "Conversation Started";
 
             const payload = STATE.imgData ? 
-                { role: 'user', content: [{ type: 'text', text: text || "इस इमेज को देखिये" }, { type: 'image_url', image_url: { url: STATE.imgData } }] } :
+                { role: 'user', content: [{ type: 'text', text: text || "Please analyze this" }, { type: 'image_url', image_url: { url: STATE.imgData } }] } :
                 { role: 'user', content: text };
 
             chat.messages.push(payload);
@@ -237,40 +230,25 @@
                 const aiMsg = data.choices[0].message;
                 chat.messages.push(aiMsg);
                 refreshUI();
+                
+                // CRITICAL: Call speak()
                 speak(aiMsg.content);
             } catch (e) {
-                console.error(e);
+                console.error("API Error:", e);
+                STATE.isThinking = false;
+            } finally {
                 STATE.isThinking = false;
             }
         }
 
-        function speak(text) {
-            window.speechSynthesis.cancel();
-            if (STATE.isRobotActive) recognition.stop();
-
-            const utterance = new SpeechSynthesisUtterance(text.replace(/[#*`]/g, ''));
-            utterance.voice = hindiVoice;
-            utterance.lang = 'hi-IN';
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
-
-            utterance.onstart = () => document.getElementById('stop-btn').classList.remove('hidden');
-            utterance.onend = () => {
-                document.getElementById('stop-btn').classList.add('hidden');
-                STATE.isThinking = false;
-                if (STATE.isRobotActive) {
-                    setTimeout(() => { if (STATE.isRobotActive) try { recognition.start(); } catch(e) {} }, 500);
-                }
-            };
-
-            window.speechSynthesis.speak(utterance);
+        // --- Standard UI Helpers ---
+        function updateStatus(listening) {
+            const orb = document.getElementById('status-orb');
+            const text = document.getElementById('status-text');
+            orb.className = listening ? "w-3 h-3 rounded-full bg-blue-500 orb-active" : "w-3 h-3 rounded-full bg-slate-400";
+            text.innerText = listening ? "Robot Listening" : "Standby";
+            text.className = listening ? "text-[10px] font-black uppercase tracking-widest text-blue-500" : "text-[10px] font-black uppercase tracking-widest text-slate-400";
         }
-
-        function stopAI() {
-            window.speechSynthesis.cancel();
-            document.getElementById('stop-btn').classList.add('hidden');
-        }
-
         function handleImage(e) {
             const file = e.target.files[0];
             const reader = new FileReader();
@@ -281,18 +259,11 @@
             };
             reader.readAsDataURL(file);
         }
-
         function clearImage() { STATE.imgData = null; document.getElementById('preview-box').classList.add('hidden'); }
-
+        function stopAI() { window.speechSynthesis.cancel(); }
         function refreshUI() {
             const list = document.getElementById('chat-list');
-            list.innerHTML = STATE.chats.map(c => `
-                <div onclick="switchChat('${c.id}')" class="p-4 rounded-2xl cursor-pointer flex items-center gap-3 ${c.id === STATE.currentId ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 font-bold' : 'hover:bg-slate-100 dark:hover:bg-slate-700'}">
-                    <i class="fa-solid fa-circle text-[8px] opacity-40"></i>
-                    <span class="truncate text-xs">${c.title}</span>
-                </div>
-            `).join('');
-
+            list.innerHTML = STATE.chats.map(c => `<div onclick="switchChat('${c.id}')" class="p-4 rounded-2xl cursor-pointer ${c.id === STATE.currentId ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 font-bold' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500'} truncate text-xs">${c.title}</div>`).join('');
             const container = document.getElementById('chat-container');
             const chat = STATE.chats.find(c => c.id === STATE.currentId);
             container.innerHTML = chat.messages.map(msg => {
@@ -304,21 +275,12 @@
                         if (p.type === 'image_url') content += `<img src="${p.image_url.url}" class="max-w-xs rounded-xl my-4 border-2 border-white shadow-lg">`;
                     });
                 } else { content = marked.parse(msg.content); }
-                
-                return `<div class="flex ${isUser ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300">
-                    <div class="max-w-[85%] p-5 shadow-sm ${isUser ? 'bg-blue-600 text-white user-bubble shadow-blue-200' : 'bg-white dark:bg-slate-800 dark:text-slate-100 ai-bubble prose dark:prose-invert'}">${content}</div>
-                </div>`;
+                return `<div class="flex ${isUser ? 'justify-end' : 'justify-start'}"><div class="max-w-[85%] p-5 shadow-sm ${isUser ? 'bg-blue-600 text-white user-bubble' : 'bg-white dark:bg-slate-800 dark:text-slate-100 ai-bubble prose dark:prose-invert'}">${content}</div></div>`;
             }).join('');
             container.scrollTop = container.scrollHeight;
-            localStorage.setItem('ai_robot_v10', JSON.stringify(STATE));
+            localStorage.setItem('ai_robot_final', JSON.stringify(STATE));
         }
-
-        function createNewChat() {
-            const id = Date.now().toString();
-            STATE.chats.unshift({ id, title: 'New Conversation', messages: [] });
-            STATE.currentId = id;
-            refreshUI();
-        }
+        function createNewChat() { const id = Date.now().toString(); STATE.chats.unshift({ id, title: 'New Conversation', messages: [] }); STATE.currentId = id; refreshUI(); }
         function switchChat(id) { STATE.currentId = id; refreshUI(); }
         function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
@@ -327,7 +289,7 @@
             STATE.apiKey = document.getElementById('api-key').value;
             STATE.model = document.getElementById('model-id').value;
             toggleSettings();
-            localStorage.setItem('ai_robot_v10', JSON.stringify(STATE));
+            localStorage.setItem('ai_robot_final', JSON.stringify(STATE));
         }
     </script>
 </body>
