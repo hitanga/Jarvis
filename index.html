@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Robot Pro - Always Active</title>
+    <title>AI Robot Pro - Full Settings & Always Active</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -40,7 +40,7 @@
             <div class="p-6">
                 <button onclick="createNewChat()" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-2xl font-bold shadow-lg">New Chat</button>
             </div>
-            <div id="chat-list" class="flex-1 overflow-y-auto px-4 space-y-2"></div>
+            <div id="chat-list" class="flex-1 overflow-y-auto px-4 space-y-2 text-sm"></div>
             <div class="p-4 border-t dark:border-slate-800 space-y-2">
                 <button onclick="toggleDarkMode()" class="w-full text-left p-2 text-sm flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl">
                     <i class="fa-solid fa-moon dark:hidden"></i><i class="fa-solid fa-sun hidden dark:block"></i> Theme
@@ -81,32 +81,48 @@
     </div>
 
     <div id="settings" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center">
-        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl w-80">
-            <h2 class="font-bold mb-4">Setup</h2>
-            <input type="password" id="api-key" placeholder="API Key" class="w-full p-3 mb-4 rounded-xl border dark:bg-slate-700 dark:text-white">
-            <button onclick="saveSettings()" class="w-full bg-blue-600 text-white p-3 rounded-xl">Save</button>
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl w-80 shadow-2xl border dark:border-slate-700">
+            <h2 class="font-bold mb-4 text-lg">AI Configuration</h2>
+            
+            <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">API Key</label>
+            <input type="password" id="api-key" placeholder="sk-or-..." class="w-full p-3 mb-4 rounded-xl border dark:bg-slate-700 dark:border-slate-600 dark:text-white text-sm">
+            
+            <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Model ID</label>
+            <input type="text" id="model-id" placeholder="e.g. google/gemini-2.0-flash-exp:free" class="w-full p-3 mb-6 rounded-xl border dark:bg-slate-700 dark:border-slate-600 dark:text-white text-sm">
+            
+            <button onclick="saveSettings()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition-all">Save Changes</button>
+            <button onclick="toggleSettings()" class="w-full mt-2 text-slate-400 text-xs py-2">Cancel</button>
         </div>
     </div>
 
     <script>
-        let STATE = { chats: [], currentId: null, apiKey: '', isRobotOn: false, isAITalking: false };
+        let STATE = { 
+            chats: [], 
+            currentId: null, 
+            apiKey: '', 
+            model: 'google/gemini-2.0-flash-exp:free', 
+            isRobotOn: false, 
+            isAITalking: false,
+            imgData: null 
+        };
         let recognition;
         const synth = window.speechSynthesis;
-        let micRestartTimer;
 
         window.onload = () => {
-            const saved = JSON.parse(localStorage.getItem('ai_robot_immortal') || '{}');
+            const saved = JSON.parse(localStorage.getItem('ai_robot_v14') || '{}');
             Object.assign(STATE, saved);
+            
             document.getElementById('api-key').value = STATE.apiKey || '';
-            if (!STATE.currentId) createNewChat();
+            document.getElementById('model-id').value = STATE.model || 'google/gemini-2.0-flash-exp:free';
+            
+            if (!STATE.currentId || STATE.chats.length === 0) createNewChat();
             initMic();
             refreshUI();
             
             // --- THE WATCHDOG TIMER ---
-            // Restarts mic every 1s if it crashes or goes into standby
             setInterval(() => {
                 if (STATE.isRobotOn && !STATE.isAITalking) {
-                    try { recognition.start(); } catch(e) {} // Silent attempt to start
+                    try { recognition.start(); } catch(e) {} 
                 }
             }, 1000);
         };
@@ -115,7 +131,7 @@
             const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new Speech();
             recognition.lang = 'en-US'; 
-            recognition.continuous = false; // False + Watchdog is more stable
+            recognition.continuous = false;
             recognition.interimResults = true;
 
             recognition.onstart = () => updateStatus(true);
@@ -124,7 +140,6 @@
             recognition.onresult = (e) => {
                 const transcript = Array.from(e.results).map(r => r[0].transcript).join('').toLowerCase();
                 
-                // Voice Interrupt
                 if (STATE.isAITalking && (transcript.includes("stop") || transcript.includes("chup") || transcript.includes("bas"))) {
                     stopSpeech();
                     return;
@@ -141,11 +156,11 @@
             STATE.isRobotOn = !STATE.isRobotOn;
             const btn = document.getElementById('robot-btn');
             if (STATE.isRobotOn) {
-                synth.speak(new SpeechSynthesisUtterance("")); // Prime audio
+                synth.speak(new SpeechSynthesisUtterance("")); 
                 btn.className = "p-4 rounded-2xl bg-blue-600 text-white shadow-xl orb-active";
                 try { recognition.start(); } catch(e) {}
             } else {
-                btn.className = "p-4 rounded-2xl bg-slate-100 dark:bg-slate-700";
+                btn.className = "p-4 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-500";
                 recognition.stop();
                 synth.cancel();
             }
@@ -155,8 +170,6 @@
             synth.cancel();
             STATE.isAITalking = true;
             const utterance = new SpeechSynthesisUtterance(text.replace(/[#*`]/g, ''));
-            
-            // Search for Hindi voice every time
             const voices = synth.getVoices();
             const hindiVoice = voices.find(v => v.lang.includes('hi')) || voices.find(v => v.lang.includes('IN'));
             if (hindiVoice) { utterance.voice = hindiVoice; utterance.lang = 'hi-IN'; }
@@ -172,19 +185,27 @@
         async function sendMessage() {
             const input = document.getElementById('user-input');
             const text = input.value.trim();
-            if (!text || STATE.isAITalking) return;
+            if ((!text && !STATE.imgData) || STATE.isAITalking) return;
             if (!STATE.apiKey) return toggleSettings();
 
             const chat = STATE.chats.find(c => c.id === STATE.currentId);
-            chat.messages.push({ role: 'user', content: text });
+            if (chat.messages.length === 0) chat.title = text ? text.substring(0, 30) : "Image Chat";
+            
+            const content = STATE.imgData ? [
+                { type: "text", text: text || "Analyze this image" },
+                { type: "image_url", image_url: { url: STATE.imgData } }
+            ] : text;
+
+            chat.messages.push({ role: 'user', content: content });
             input.value = '';
+            clearImage();
             refreshUI();
 
             try {
                 const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${STATE.apiKey}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: "google/gemini-2.0-flash-exp:free", messages: chat.messages })
+                    body: JSON.stringify({ model: STATE.model, messages: chat.messages })
                 });
                 const data = await res.json();
                 const aiMsg = data.choices[0].message;
@@ -201,18 +222,61 @@
             text.innerText = listening ? "Listening" : (STATE.isRobotOn ? "Ready" : "Standby");
         }
 
-        function toggleDarkMode() { document.documentElement.classList.toggle('dark'); localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light'); }
+        function toggleDarkMode() { 
+            const isDark = document.documentElement.classList.toggle('dark'); 
+            localStorage.setItem('theme', isDark ? 'dark' : 'light'); 
+        }
+
         function stopSpeech() { synth.cancel(); STATE.isAITalking = false; document.getElementById('stop-btn').classList.add('hidden'); }
-        function createNewChat() { const id = Date.now().toString(); STATE.chats.unshift({ id, title: 'New Chat', messages: [] }); STATE.currentId = id; refreshUI(); }
+        
+        function handleImage(e) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                STATE.imgData = ev.target.result;
+                sendMessage(); // Auto-send image
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+        function clearImage() { STATE.imgData = null; }
+
+        function createNewChat() { 
+            const id = Date.now().toString(); 
+            STATE.chats.unshift({ id, title: 'New Chat', messages: [] }); 
+            STATE.currentId = id; 
+            refreshUI(); 
+        }
+
+        function switchChat(id) { STATE.currentId = id; refreshUI(); }
+
         function refreshUI() {
+            const chatList = document.getElementById('chat-list');
+            chatList.innerHTML = STATE.chats.map(c => `
+                <div onclick="switchChat('${c.id}')" class="p-3 rounded-xl cursor-pointer ${c.id === STATE.currentId ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 font-bold' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500'} truncate mb-1">
+                    <i class="fa-solid fa-message mr-2 opacity-30"></i>${c.title}
+                </div>
+            `).join('');
+
             const container = document.getElementById('chat-container');
             const chat = STATE.chats.find(c => c.id === STATE.currentId);
-            container.innerHTML = chat.messages.map(msg => `<div class="flex ${msg.role==='user'?'justify-end':'justify-start'}"><div class="max-w-[85%] p-4 ${msg.role==='user'?'user-bubble':'ai-bubble dark:text-white prose dark:prose-invert'}">${marked.parse(msg.content)}</div></div>`).join('');
+            container.innerHTML = chat.messages.map(msg => {
+                const isUser = msg.role === 'user';
+                let txt = typeof msg.content === 'string' ? msg.content : msg.content[0].text;
+                return `<div class="flex ${isUser?'justify-end':'justify-start'}"><div class="max-w-[85%] p-4 ${isUser?'user-bubble shadow-lg shadow-blue-200 dark:shadow-none':'ai-bubble dark:text-white prose dark:prose-invert'}">${marked.parse(txt)}</div></div>`
+            }).join('');
             container.scrollTop = container.scrollHeight;
-            localStorage.setItem('ai_robot_immortal', JSON.stringify(STATE));
+            localStorage.setItem('ai_robot_v14', JSON.stringify(STATE));
         }
+
         function toggleSettings() { document.getElementById('settings').classList.toggle('hidden'); }
-        function saveSettings() { STATE.apiKey = document.getElementById('api-key').value; toggleSettings(); localStorage.setItem('ai_robot_immortal', JSON.stringify(STATE)); }
+        
+        function saveSettings() { 
+            STATE.apiKey = document.getElementById('api-key').value; 
+            STATE.model = document.getElementById('model-id').value; 
+            toggleSettings(); 
+            localStorage.setItem('ai_robot_v14', JSON.stringify(STATE)); 
+        }
+
+        function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
     </script>
 </body>
 </html>
