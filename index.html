@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Companion - Always Listening</title>
+    <title>AI Companion - Pro Robot Mode</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -12,16 +12,16 @@
     <style>
         body { height: 100dvh; overflow: hidden; font-family: 'Inter', sans-serif; }
         #chat-container { scroll-behavior: smooth; }
-        .orb-listening {
-            box-shadow: 0 0 20px #3b82f6, 0 0 40px #3b82f6;
-            animation: pulse-orb 1.5s infinite;
+        .orb-active {
+            box-shadow: 0 0 15px #3b82f6, 0 0 30px #3b82f6;
+            animation: pulse-orb 1.2s infinite;
         }
         @keyframes pulse-orb {
             0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.7; }
+            50% { transform: scale(1.2); opacity: 0.6; }
             100% { transform: scale(1); opacity: 1; }
         }
-        .ai-bubble { border-radius: 20px 20px 20px 0px; }
+        .ai-bubble { border-radius: 20px 20px 20px 0px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .user-bubble { border-radius: 20px 20px 0px 20px; }
     </style>
 </head>
@@ -38,7 +38,7 @@
             <div id="chat-list" class="flex-1 overflow-y-auto px-4 space-y-2"></div>
             <div class="p-4 border-t dark:border-slate-700">
                 <button onclick="toggleSettings()" class="w-full text-left p-2 text-sm text-slate-500 hover:text-blue-500 flex items-center gap-2">
-                    <i class="fa-solid fa-gear"></i> AI Config
+                    <i class="fa-solid fa-gear"></i> Robot Settings
                 </button>
             </div>
         </aside>
@@ -48,13 +48,12 @@
                 <button onclick="toggleSidebar()" class="lg:hidden text-2xl"><i class="fa-solid fa-bars-staggered"></i></button>
                 <div class="flex items-center gap-3">
                     <div id="status-orb" class="w-3 h-3 rounded-full bg-slate-400"></div>
-                    <span id="status-text" class="text-xs font-bold uppercase tracking-widest text-slate-500">Standby</span>
+                    <span id="status-text" class="text-[10px] font-black uppercase tracking-widest text-slate-400">Standby</span>
                 </div>
-                <button id="stop-btn" onclick="stopAI()" class="hidden bg-red-500 text-white px-4 py-1 rounded-full text-xs font-bold animate-pulse">STOP AI</button>
+                <button id="stop-btn" onclick="stopAI()" class="hidden bg-red-500 text-white px-4 py-1 rounded-full text-xs font-bold animate-pulse">STOP VOICE</button>
             </header>
 
-            <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-10 space-y-8">
-                </div>
+            <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-10 space-y-8"></div>
 
             <div class="p-6 max-w-4xl mx-auto w-full">
                 <div id="preview-box" class="hidden mb-4 relative w-24">
@@ -64,31 +63,32 @@
 
                 <div class="bg-white dark:bg-slate-800 rounded-3xl p-3 shadow-2xl border dark:border-slate-700 flex items-end gap-2">
                     <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleImage(event)">
-                    <button onclick="document.getElementById('file-input').click()" class="p-4 text-slate-400 hover:text-blue-500"><i class="fa-solid fa-paperclip text-xl"></i></button>
+                    <button onclick="document.getElementById('file-input').click()" class="p-4 text-slate-400 hover:text-blue-500"><i class="fa-solid fa-camera text-xl"></i></button>
                     
-                    <textarea id="user-input" rows="1" placeholder="Type or just start speaking..." class="flex-1 bg-transparent border-0 focus:ring-0 py-4 resize-none max-h-32 text-lg" onkeydown="handleKey(event)"></textarea>
+                    <textarea id="user-input" rows="1" placeholder="Start speaking..." class="flex-1 bg-transparent border-0 focus:ring-0 py-4 resize-none max-h-32 text-lg" onkeydown="handleKey(event)"></textarea>
                     
                     <button id="mic-btn" onclick="toggleRobotMode()" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-500 transition-all">
-                        <i class="fa-solid fa-microphone-lines text-2xl"></i>
+                        <i id="mic-icon" class="fa-solid fa-microphone-lines text-2xl"></i>
                     </button>
                     
                     <button onclick="sendMessage()" class="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700">
                         <i class="fa-solid fa-paper-plane"></i>
                     </button>
                 </div>
-                <p class="text-[10px] text-center mt-3 text-slate-400 font-bold uppercase tracking-tighter">AI Robot Mode: Speak anytime to interact</p>
             </div>
         </main>
     </div>
 
-    <div id="settings" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-6">
-        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl w-full max-w-md">
-            <h2 class="text-2xl font-bold mb-6">Robot Settings</h2>
+    <div id="settings" class="hidden fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-6">
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6">Configuration</h2>
             <div class="space-y-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase">API Key</label>
                 <input type="password" id="api-key" placeholder="OpenRouter API Key" class="w-full p-4 rounded-xl border dark:bg-slate-700 dark:border-slate-600">
+                <label class="block text-xs font-bold text-slate-500 uppercase">Model</label>
                 <input type="text" id="model-id" value="google/gemini-2.0-flash-exp:free" class="w-full p-4 rounded-xl border dark:bg-slate-700 dark:border-slate-600">
             </div>
-            <button onclick="saveSettings()" class="w-full mt-6 bg-blue-600 text-white p-4 rounded-xl font-bold">Save & Restart</button>
+            <button onclick="saveSettings()" class="w-full mt-8 bg-blue-600 text-white p-4 rounded-xl font-bold shadow-lg">Save & Initialize</button>
         </div>
     </div>
 
@@ -106,67 +106,86 @@
         let recognition;
         let hindiVoice = null;
 
-        // --- Core Setup ---
         window.onload = () => {
-            const saved = localStorage.getItem('ai_robot_v9');
+            const saved = localStorage.getItem('ai_robot_v10');
             if (saved) Object.assign(STATE, JSON.parse(saved));
             
-            document.getElementById('api-key').value = STATE.apiKey;
-            document.getElementById('model-id').value = STATE.model;
+            document.getElementById('api-key').value = STATE.apiKey || '';
+            document.getElementById('model-id').value = STATE.model || 'google/gemini-2.0-flash-exp:free';
 
             if (STATE.chats.length === 0) createNewChat();
             
             initVoices();
-            initSpeech();
+            initSpeechEngine();
             refreshUI();
         };
 
         function initVoices() {
             const loadVoices = () => {
                 const voices = window.speechSynthesis.getVoices();
-                hindiVoice = voices.find(v => v.lang.includes('hi')) || voices.find(v => v.lang.includes('en'));
+                // Priority: Google Hindi -> Microsoft Hemant -> Any Hindi -> First available
+                hindiVoice = voices.find(v => v.name.includes('Google') && v.lang.includes('hi')) || 
+                             voices.find(v => v.lang.includes('hi')) || 
+                             voices[0];
             };
             window.speechSynthesis.onvoiceschanged = loadVoices;
             loadVoices();
         }
 
-        // --- Robust Listening Logic ---
-        function initSpeech() {
+        function initSpeechEngine() {
             const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!Speech) return alert("Speech not supported in this browser.");
+            if (!Speech) return;
             
             recognition = new Speech();
             recognition.lang = 'hi-IN';
-            recognition.continuous = false; // Using burst-mode for better response timing
+            recognition.continuous = false;
             recognition.interimResults = false;
 
             recognition.onstart = () => updateStatus(true);
             
             recognition.onend = () => {
                 updateStatus(false);
-                // The AI Robot Magic: Restart listening immediately if mode is active
+                // Auto-Restart logic
                 if (STATE.isRobotActive && !STATE.isThinking && !window.speechSynthesis.speaking) {
-                    recognition.start();
+                    setTimeout(() => {
+                        if (STATE.isRobotActive) {
+                            try { recognition.start(); } catch(e) { console.log("Mic restart prevented"); }
+                        }
+                    }, 400);
                 }
             };
 
             recognition.onresult = (e) => {
                 const text = e.results[0][0].transcript;
-                document.getElementById('user-input').value = text;
-                sendMessage();
+                if (text.trim().length > 0) {
+                    document.getElementById('user-input').value = text;
+                    sendMessage();
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.log("Speech Error: " + event.error);
+                if (event.error === 'not-allowed') {
+                    alert("Please allow microphone access!");
+                    STATE.isRobotActive = false;
+                    refreshUI();
+                }
             };
         }
 
         function toggleRobotMode() {
+            // Wake up Audio Context for mobile/chrome
+            if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
+            
             STATE.isRobotActive = !STATE.isRobotActive;
             const btn = document.getElementById('mic-btn');
+            const icon = document.getElementById('mic-icon');
+            
             if (STATE.isRobotActive) {
-                btn.classList.replace('bg-slate-100', 'bg-blue-600');
-                btn.classList.replace('text-slate-500', 'text-white');
+                btn.className = "p-4 rounded-2xl bg-blue-600 text-white transition-all shadow-lg";
                 try { recognition.start(); } catch(e) {}
             } else {
-                btn.classList.replace('bg-blue-600', 'bg-slate-100');
-                btn.classList.replace('text-white', 'text-slate-500');
+                btn.className = "p-4 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-500 transition-all";
                 recognition.stop();
                 window.speechSynthesis.cancel();
             }
@@ -176,58 +195,34 @@
             const orb = document.getElementById('status-orb');
             const text = document.getElementById('status-text');
             if (listening) {
-                orb.className = "w-3 h-3 rounded-full bg-blue-500 orb-listening";
-                text.innerText = "Listening...";
+                orb.className = "w-3 h-3 rounded-full bg-blue-500 orb-active";
+                text.innerText = "Robot Listening";
+                text.className = "text-[10px] font-black uppercase tracking-widest text-blue-500";
             } else {
                 orb.className = "w-3 h-3 rounded-full bg-slate-400";
                 text.innerText = "Standby";
+                text.className = "text-[10px] font-black uppercase tracking-widest text-slate-400";
             }
         }
 
-        // --- Voice Output ---
-        function speak(text) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text.replace(/[#*`]/g, ''));
-            utterance.voice = hindiVoice;
-            utterance.lang = 'hi-IN';
-            utterance.rate = 1.0;
-
-            utterance.onstart = () => document.getElementById('stop-btn').classList.remove('hidden');
-            utterance.onend = () => {
-                document.getElementById('stop-btn').classList.add('hidden');
-                // Restart listening after speaking finishes
-                if (STATE.isRobotActive) setTimeout(() => { try { recognition.start(); } catch(e) {} }, 300);
-            };
-
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function stopAI() {
-            window.speechSynthesis.cancel();
-            document.getElementById('stop-btn').classList.add('hidden');
-        }
-
-        // --- Messaging ---
         async function sendMessage() {
             const input = document.getElementById('user-input');
             const text = input.value.trim();
             if ((!text && !STATE.imgData) || STATE.isThinking) return;
-
-            if (!STATE.apiKey) return alert("Please set API Key in settings!");
+            if (!STATE.apiKey) { toggleSettings(); return; }
 
             STATE.isThinking = true;
             const chat = STATE.chats.find(c => c.id === STATE.currentId);
             
-            // Set Sidebar Title
             if (chat.messages.length === 0) {
-                chat.title = text ? text.substring(0, 25) + '...' : "Image Shared";
+                chat.title = text ? text.substring(0, 30) : "Image Interaction";
             }
 
-            const userMsg = STATE.imgData ? 
-                { role: 'user', content: [{ type: 'text', text: text || "इस फोटो के बारे में बताओ" }, { type: 'image_url', image_url: { url: STATE.imgData } }] } :
+            const payload = STATE.imgData ? 
+                { role: 'user', content: [{ type: 'text', text: text || "इस इमेज को देखिये" }, { type: 'image_url', image_url: { url: STATE.imgData } }] } :
                 { role: 'user', content: text };
 
-            chat.messages.push(userMsg);
+            chat.messages.push(payload);
             input.value = '';
             clearImage();
             refreshUI();
@@ -245,12 +240,37 @@
                 speak(aiMsg.content);
             } catch (e) {
                 console.error(e);
-            } finally {
                 STATE.isThinking = false;
             }
         }
 
-        // --- Image Support ---
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            if (STATE.isRobotActive) recognition.stop();
+
+            const utterance = new SpeechSynthesisUtterance(text.replace(/[#*`]/g, ''));
+            utterance.voice = hindiVoice;
+            utterance.lang = 'hi-IN';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+
+            utterance.onstart = () => document.getElementById('stop-btn').classList.remove('hidden');
+            utterance.onend = () => {
+                document.getElementById('stop-btn').classList.add('hidden');
+                STATE.isThinking = false;
+                if (STATE.isRobotActive) {
+                    setTimeout(() => { if (STATE.isRobotActive) try { recognition.start(); } catch(e) {} }, 500);
+                }
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function stopAI() {
+            window.speechSynthesis.cancel();
+            document.getElementById('stop-btn').classList.add('hidden');
+        }
+
         function handleImage(e) {
             const file = e.target.files[0];
             const reader = new FileReader();
@@ -261,15 +281,15 @@
             };
             reader.readAsDataURL(file);
         }
+
         function clearImage() { STATE.imgData = null; document.getElementById('preview-box').classList.add('hidden'); }
 
-        // --- UI Updates ---
         function refreshUI() {
             const list = document.getElementById('chat-list');
             list.innerHTML = STATE.chats.map(c => `
                 <div onclick="switchChat('${c.id}')" class="p-4 rounded-2xl cursor-pointer flex items-center gap-3 ${c.id === STATE.currentId ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 font-bold' : 'hover:bg-slate-100 dark:hover:bg-slate-700'}">
-                    <i class="fa-solid fa-message opacity-30"></i>
-                    <span class="truncate text-sm">${c.title}</span>
+                    <i class="fa-solid fa-circle text-[8px] opacity-40"></i>
+                    <span class="truncate text-xs">${c.title}</span>
                 </div>
             `).join('');
 
@@ -281,16 +301,16 @@
                 if (Array.isArray(msg.content)) {
                     msg.content.forEach(p => {
                         if (p.type === 'text') content += marked.parse(p.text);
-                        if (p.type === 'image_url') content += `<img src="${p.image_url.url}" class="max-w-xs rounded-xl my-2 border shadow-lg">`;
+                        if (p.type === 'image_url') content += `<img src="${p.image_url.url}" class="max-w-xs rounded-xl my-4 border-2 border-white shadow-lg">`;
                     });
                 } else { content = marked.parse(msg.content); }
                 
-                return `<div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
-                    <div class="max-w-[80%] p-5 shadow-sm ${isUser ? 'bg-blue-600 text-white user-bubble' : 'bg-white dark:bg-slate-800 dark:text-slate-100 ai-bubble prose dark:prose-invert'}">${content}</div>
+                return `<div class="flex ${isUser ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300">
+                    <div class="max-w-[85%] p-5 shadow-sm ${isUser ? 'bg-blue-600 text-white user-bubble shadow-blue-200' : 'bg-white dark:bg-slate-800 dark:text-slate-100 ai-bubble prose dark:prose-invert'}">${content}</div>
                 </div>`;
             }).join('');
             container.scrollTop = container.scrollHeight;
-            localStorage.setItem('ai_robot_v9', JSON.stringify(STATE));
+            localStorage.setItem('ai_robot_v10', JSON.stringify(STATE));
         }
 
         function createNewChat() {
@@ -307,7 +327,7 @@
             STATE.apiKey = document.getElementById('api-key').value;
             STATE.model = document.getElementById('model-id').value;
             toggleSettings();
-            localStorage.setItem('ai_robot_v9', JSON.stringify(STATE));
+            localStorage.setItem('ai_robot_v10', JSON.stringify(STATE));
         }
     </script>
 </body>
