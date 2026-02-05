@@ -1,70 +1,103 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Companion - Persistent Voice</title>
+    <title>AI Robot - English Input & Dark Mode</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <script>
+        // Initialize Theme
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     <style>
         body { height: 100dvh; overflow: hidden; font-family: 'Inter', sans-serif; }
         #chat-container { scroll-behavior: smooth; }
         .orb-active { 
-            box-shadow: 0 0 25px rgba(59, 130, 246, 0.6); 
-            animation: pulse-ring 1.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+            box-shadow: 0 0 20px #3b82f6; 
+            animation: pulse-ring 1.5s infinite;
         }
         @keyframes pulse-ring {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+            0% { transform: scale(0.95); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.7; }
+            100% { transform: scale(0.95); opacity: 1; }
         }
-        .ai-bubble { border-radius: 20px 20px 20px 0px; background: #ffffff; border: 1px solid #e2e8f0; }
-        .user-bubble { border-radius: 20px 20px 0px 20px; background: #2563eb; color: white; }
-        .dark .ai-bubble { background: #1e293b; border-color: #334155; }
+        /* Fix for visibility in chat bubbles */
+        .ai-bubble { 
+            border-radius: 20px 20px 20px 0px; 
+            color: #1e293b; /* Dark slate for light mode */
+        }
+        .dark .ai-bubble { 
+            color: #f1f5f9; /* Light slate for dark mode */
+            background-color: #1e293b;
+            border: 1px solid #334155;
+        }
+        .user-bubble { 
+            border-radius: 20px 20px 0px 20px; 
+            background-color: #2563eb; 
+            color: white; 
+        }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 transition-colors">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
 
     <div id="app" class="flex h-full w-full overflow-hidden">
         
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-[280px] bg-white dark:bg-slate-800 transform -translate-x-full lg:translate-x-0 lg:static transition-transform flex flex-col border-r dark:border-slate-700">
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-[280px] bg-white dark:bg-slate-900 transform -translate-x-full lg:translate-x-0 lg:static transition-transform flex flex-col border-r dark:border-slate-800">
             <div class="p-6">
-                <button onclick="createNewChat()" class="w-full bg-blue-600 text-white p-3 rounded-2xl font-bold shadow-lg hover:bg-blue-700 transition-all">New Chat</button>
+                <button onclick="createNewChat()" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-2xl font-bold shadow-lg transition-all">
+                    <i class="fa-solid fa-plus mr-2"></i> New Conversation
+                </button>
             </div>
             <div id="chat-list" class="flex-1 overflow-y-auto px-4 space-y-2"></div>
-            <div class="p-4 border-t dark:border-slate-700">
-                <button onclick="toggleSettings()" class="w-full text-xs text-slate-400 font-bold uppercase tracking-widest hover:text-blue-500 transition-colors"><i class="fa-solid fa-gear mr-2"></i>API Configuration</button>
+            <div class="p-4 border-t dark:border-slate-800 space-y-2">
+                <button onclick="toggleDarkMode()" class="w-full text-left p-2 text-sm flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block"></i>
+                    <span>Switch Theme</span>
+                </button>
+                <button onclick="toggleSettings()" class="w-full text-left p-2 text-sm flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 transition-all">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>AI Settings</span>
+                </button>
             </div>
         </aside>
 
         <main class="flex-1 flex flex-col h-full relative">
-            <header class="h-16 flex items-center justify-between px-6 border-b dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md">
-                <button onclick="toggleSidebar()" class="lg:hidden text-2xl"><i class="fa-solid fa-bars-staggered"></i></button>
-                <div class="flex items-center gap-3">
-                    <div id="status-orb" class="w-3 h-3 rounded-full bg-slate-400"></div>
-                    <span id="status-text" class="text-[10px] font-black uppercase tracking-widest text-slate-400">Disconnected</span>
+            <header class="h-16 flex items-center justify-between px-6 border-b dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleSidebar()" class="lg:hidden text-2xl"><i class="fa-solid fa-bars-staggered"></i></button>
+                    <div class="flex items-center gap-3">
+                        <div id="status-orb" class="w-3 h-3 rounded-full bg-slate-300"></div>
+                        <span id="status-text" class="text-[10px] font-black uppercase tracking-widest text-slate-400">Standby</span>
+                    </div>
                 </div>
-                <button id="stop-btn" onclick="stopSpeech()" class="hidden bg-red-500 text-white px-4 py-1 rounded-full text-xs font-bold shadow-md">STOP AI VOICE</button>
+                <button id="stop-btn" onclick="stopSpeech()" class="hidden bg-red-500 text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg">STOP VOICE</button>
             </header>
 
-            <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-10 space-y-6"></div>
+            <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-10 space-y-8"></div>
 
             <div class="p-6 max-w-4xl mx-auto w-full">
                 <div id="preview-box" class="hidden mb-4 relative w-24">
-                    <img id="preview-img" class="w-24 h-24 object-cover rounded-2xl border-2 border-white shadow-xl">
+                    <img id="preview-img" class="w-24 h-24 object-cover rounded-2xl border-2 border-white dark:border-slate-700 shadow-xl">
                     <button onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <div class="bg-white dark:bg-slate-800 rounded-3xl p-2 shadow-2xl border dark:border-slate-700 flex items-end gap-2">
+                <div class="bg-white dark:bg-slate-800 rounded-3xl p-2 shadow-2xl border dark:border-slate-700 flex items-end gap-2 transition-all focus-within:ring-2 ring-blue-500">
                     <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleImage(event)">
                     <button onclick="document.getElementById('file-input').click()" class="p-4 text-slate-400 hover:text-blue-500"><i class="fa-solid fa-camera text-xl"></i></button>
                     
-                    <textarea id="user-input" rows="1" placeholder="Type or talk to me..." class="flex-1 bg-transparent border-0 focus:ring-0 py-4 resize-none max-h-32 text-lg dark:text-white" onkeydown="handleKey(event)"></textarea>
+                    <textarea id="user-input" rows="1" placeholder="Type or talk in English/Hinglish..." class="flex-1 bg-transparent border-0 focus:ring-0 py-4 resize-none max-h-32 text-lg dark:text-white" onkeydown="handleKey(event)"></textarea>
                     
-                    <button id="robot-btn" onclick="startRobotSession()" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-500 transition-all hover:scale-105">
+                    <button id="robot-btn" onclick="toggleRobotMode()" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-500 transition-all hover:scale-105">
                         <i id="robot-icon" class="fa-solid fa-robot text-2xl"></i>
                     </button>
                     
@@ -72,19 +105,21 @@
                         <i class="fa-solid fa-paper-plane"></i>
                     </button>
                 </div>
-                <p class="text-[10px] text-center mt-3 text-slate-400 font-bold uppercase tracking-widest">Always-on Mode: The Robot will hear you and reply automatically</p>
+                <p class="text-[10px] text-center mt-3 text-slate-400 font-bold uppercase tracking-widest">Input Language: English Script | Output: Hindi/English Voice</p>
             </div>
         </main>
     </div>
 
-    <div id="settings" class="hidden fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-xl flex items-center justify-center p-6">
+    <div id="settings" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-6">
         <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl w-full max-w-md shadow-2xl border dark:border-slate-700">
-            <h2 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-key text-blue-500"></i> Robot Logic Setup</h2>
+            <h2 class="text-xl font-bold mb-6">Robot Setup</h2>
             <div class="space-y-4">
-                <input type="password" id="api-key" placeholder="OpenRouter API Key" class="w-full p-4 rounded-xl border dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                <label class="block text-xs font-bold text-slate-400 uppercase">OpenRouter Key</label>
+                <input type="password" id="api-key" placeholder="sk-or-..." class="w-full p-4 rounded-xl border dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                <label class="block text-xs font-bold text-slate-400 uppercase">AI Model</label>
                 <input type="text" id="model-id" value="google/gemini-2.0-flash-exp:free" class="w-full p-4 rounded-xl border dark:bg-slate-700 dark:border-slate-600 dark:text-white">
             </div>
-            <button onclick="saveSettings()" class="w-full mt-8 bg-blue-600 text-white p-4 rounded-xl font-bold shadow-lg">Activate Connection</button>
+            <button onclick="saveSettings()" class="w-full mt-8 bg-blue-600 text-white p-4 rounded-xl font-bold shadow-lg">Save Configuration</button>
         </div>
     </div>
 
@@ -103,7 +138,7 @@
         const synth = window.speechSynthesis;
 
         window.onload = () => {
-            const saved = localStorage.getItem('robot_final_v11');
+            const saved = localStorage.getItem('ai_robot_v12');
             if (saved) Object.assign(STATE, JSON.parse(saved));
             
             document.getElementById('api-key').value = STATE.apiKey || '';
@@ -120,21 +155,21 @@
             if (!Speech) return;
             
             recognition = new Speech();
-            recognition.lang = 'hi-IN';
-            recognition.continuous = false; // False is better for "turn-based" companion logic
+            // CRITICAL: Set to English so it writes in Roman script
+            recognition.lang = 'en-US'; 
+            recognition.continuous = false;
             recognition.interimResults = false;
 
             recognition.onstart = () => updateStatus(true);
             
             recognition.onend = () => {
                 updateStatus(false);
-                // The Persistent Restart Logic
                 if (STATE.isRobotOn && !STATE.isAITalking) {
                     setTimeout(() => {
                         if (STATE.isRobotOn && !STATE.isAITalking) {
                             try { recognition.start(); } catch(e) {}
                         }
-                    }, 200); 
+                    }, 300); 
                 }
             };
 
@@ -147,19 +182,26 @@
             };
         }
 
-        async function startRobotSession() {
+        function toggleDarkMode() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        function toggleRobotMode() {
             STATE.isRobotOn = !STATE.isRobotOn;
             const btn = document.getElementById('robot-btn');
             const icon = document.getElementById('robot-icon');
 
             if (STATE.isRobotOn) {
-                // IMPORTANT: User gesture to enable audio context
-                const wakeup = new SpeechSynthesisUtterance("Robot Activated");
-                wakeup.volume = 0; // Silent wakeup
-                synth.speak(wakeup);
-
+                // Wake up audio context
+                synth.speak(new SpeechSynthesisUtterance(""));
                 btn.className = "p-4 rounded-2xl bg-blue-600 text-white shadow-xl orb-active";
-                icon.className = "fa-solid fa-headset text-2xl";
+                icon.className = "fa-solid fa-microphone-lines text-2xl";
                 try { recognition.start(); } catch(e) {}
             } else {
                 btn.className = "p-4 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-500";
@@ -172,12 +214,12 @@
         function speak(text) {
             synth.cancel();
             STATE.isAITalking = true;
-            if (recognition) recognition.stop(); // Stop listening while talking to avoid echo
+            if (recognition) recognition.stop();
 
             const utterance = new SpeechSynthesisUtterance(text.replace(/[#*`]/g, ''));
             const voices = synth.getVoices();
             
-            // Priority Hindi Voice Finding
+            // Try to find a good Hindi voice for output
             const hindiVoice = voices.find(v => v.lang.includes('hi')) || voices.find(v => v.lang.includes('IN'));
             if (hindiVoice) {
                 utterance.voice = hindiVoice;
@@ -185,18 +227,13 @@
             }
 
             utterance.onstart = () => document.getElementById('stop-btn').classList.remove('hidden');
-            
             utterance.onend = () => {
                 STATE.isAITalking = false;
                 document.getElementById('stop-btn').classList.add('hidden');
-                // Restart listening ONLY after AI finishes speaking
                 if (STATE.isRobotOn) {
-                    setTimeout(() => { 
-                        if (STATE.isRobotOn) try { recognition.start(); } catch(e) {} 
-                    }, 500);
+                    setTimeout(() => { if (STATE.isRobotOn) try { recognition.start(); } catch(e) {} }, 500);
                 }
             };
-
             synth.speak(utterance);
         }
 
@@ -207,10 +244,10 @@
             if (!STATE.apiKey) { toggleSettings(); return; }
 
             const chat = STATE.chats.find(c => c.id === STATE.currentId);
-            if (chat.messages.length === 0) chat.title = text ? text.substring(0, 30) : "New Dialogue";
+            if (chat.messages.length === 0) chat.title = text ? text.substring(0, 30) : "Dialogue";
 
             const payload = STATE.imgData ? 
-                { role: 'user', content: [{ type: 'text', text: text || "इस इमेज को देखिये" }, { type: 'image_url', image_url: { url: STATE.imgData } }] } :
+                { role: 'user', content: [{ type: 'text', text: text || "Analyze this" }, { type: 'image_url', image_url: { url: STATE.imgData } }] } :
                 { role: 'user', content: text };
 
             chat.messages.push(payload);
@@ -228,19 +265,18 @@
                 const aiMsg = data.choices[0].message;
                 chat.messages.push(aiMsg);
                 refreshUI();
-                speak(aiMsg.content); // ALWAYS TRIGGERS VOICE
+                speak(aiMsg.content);
             } catch (e) {
                 console.error(e);
                 STATE.isAITalking = false;
             }
         }
 
-        // --- Standard UI Logic ---
         function updateStatus(listening) {
             const orb = document.getElementById('status-orb');
             const text = document.getElementById('status-text');
-            orb.className = listening ? "w-3 h-3 rounded-full bg-blue-500 orb-active" : "w-3 h-3 rounded-full bg-slate-400";
-            text.innerText = listening ? "Listening..." : (STATE.isRobotOn ? "Processing..." : "Standby");
+            orb.className = listening ? "w-3 h-3 rounded-full bg-blue-500 orb-active" : "w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-600";
+            text.innerText = listening ? "Listening" : "Standby";
             text.className = `text-[10px] font-black uppercase tracking-widest ${listening ? 'text-blue-500' : 'text-slate-400'}`;
         }
 
@@ -255,9 +291,15 @@
             reader.readAsDataURL(e.target.files[0]);
         }
         function clearImage() { STATE.imgData = null; document.getElementById('preview-box').classList.add('hidden'); }
+        
         function refreshUI() {
             const list = document.getElementById('chat-list');
-            list.innerHTML = STATE.chats.map(c => `<div onclick="switchChat('${c.id}')" class="p-4 rounded-xl cursor-pointer ${c.id === STATE.currentId ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 font-bold' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500'} truncate text-xs mb-1 transition-all">${c.title}</div>`).join('');
+            list.innerHTML = STATE.chats.map(c => `
+                <div onclick="switchChat('${c.id}')" class="p-3 rounded-xl cursor-pointer ${c.id === STATE.currentId ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 font-bold' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400'} truncate text-xs transition-all mb-1">
+                    <i class="fa-solid fa-message mr-2 opacity-50"></i>${c.title}
+                </div>
+            `).join('');
+            
             const container = document.getElementById('chat-container');
             const chat = STATE.chats.find(c => c.id === STATE.currentId);
             container.innerHTML = chat.messages.map(msg => {
@@ -266,15 +308,24 @@
                 if (Array.isArray(msg.content)) {
                     msg.content.forEach(p => {
                         if (p.type === 'text') content += marked.parse(p.text);
-                        if (p.type === 'image_url') content += `<img src="${p.image_url.url}" class="max-w-xs rounded-xl my-4 border-2 border-white shadow-lg">`;
+                        if (p.type === 'image_url') content += `<img src="${p.image_url.url}" class="max-w-xs rounded-xl my-4 border shadow-lg">`;
                     });
                 } else { content = marked.parse(msg.content); }
-                return `<div class="flex ${isUser ? 'justify-end' : 'justify-start'}"><div class="max-w-[85%] p-5 shadow-sm ${isUser ? 'user-bubble' : 'ai-bubble dark:text-slate-100 prose dark:prose-invert'}">${content}</div></div>`;
+                
+                return `<div class="flex ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in duration-300">
+                    <div class="max-w-[85%] p-5 shadow-sm ${isUser ? 'user-bubble shadow-blue-200' : 'ai-bubble dark:text-slate-100 prose dark:prose-invert'}">${content}</div>
+                </div>`;
             }).join('');
             container.scrollTop = container.scrollHeight;
-            localStorage.setItem('robot_final_v11', JSON.stringify(STATE));
+            localStorage.setItem('ai_robot_v12', JSON.stringify(STATE));
         }
-        function createNewChat() { const id = Date.now().toString(); STATE.chats.unshift({ id, title: 'New Dialogue', messages: [] }); STATE.currentId = id; refreshUI(); }
+
+        function createNewChat() { 
+            const id = Date.now().toString(); 
+            STATE.chats.unshift({ id, title: 'New Chat', messages: [] }); 
+            STATE.currentId = id; 
+            refreshUI(); 
+        }
         function switchChat(id) { STATE.currentId = id; refreshUI(); }
         function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
@@ -283,7 +334,7 @@
             STATE.apiKey = document.getElementById('api-key').value;
             STATE.model = document.getElementById('model-id').value;
             toggleSettings();
-            localStorage.setItem('robot_final_v11', JSON.stringify(STATE));
+            localStorage.setItem('ai_robot_v12', JSON.stringify(STATE));
         }
     </script>
 </body>
