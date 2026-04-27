@@ -78,12 +78,21 @@ window.addEventListener('DOMContentLoaded', () => {
         Object.assign(STATE, saved);
     } catch {}
 
+    // ✅ SAFE ACCESS (NO CRASH)
     const apiInput = document.getElementById('api-key');
-    if (apiInput) apiInput.value = STATE.apiKey || '';
+    if (apiInput) {
+        apiInput.value = STATE.apiKey || '';
+    }
 
-    if (!STATE.currentId) createNewChat();
+    const modelInput = document.getElementById('model-id');
+    if (modelInput) {
+        modelInput.value = STATE.model || '';
+    }
 
-    initVoices();
+    if (!STATE.currentId || STATE.chats.length === 0) {
+        createNewChat();
+    }
+
     initMic();
     refreshUI();
 });
@@ -289,10 +298,13 @@ function switchChat(id) {
 }
 
 /* ---------- SAVE API KEY ---------- */
-document.getElementById('api-key').addEventListener('input', (e) => {
-    STATE.apiKey = e.target.value;
-    localStorage.setItem('jarvis_v2', JSON.stringify(STATE));
-});
+const apiInputListener = document.getElementById('api-key');
+if (apiInputListener) {
+    apiInputListener.addEventListener('input', (e) => {
+        STATE.apiKey = e.target.value;
+        localStorage.setItem('jarvis_v2', JSON.stringify(STATE));
+    });
+}
 </script>
 
 </body>
