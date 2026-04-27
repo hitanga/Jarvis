@@ -74,6 +74,7 @@
     <script>
         let STATE = { chats: [], currentId: null, apiKey: '', model: 'minimax/minimax-m2.5:free', isRobotOn: false, isAITalking: false };
         let recognition;
+        let isListening = false;
         const synth = window.speechSynthesis;
 
         window.onload = () => {
@@ -98,17 +99,13 @@
             };
             document.addEventListener('click', triggerGreeting);
 
-            setInterval(() => {
-                if (STATE.isRobotOn && !STATE.isAITalking && (!recognition || recognition.readyState !== 'listening')) {
-                    try { recognition.start(); } catch(e) {}
-                }
-            }, 1000);
+            
         };
         function initMic() {
             const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
 
             if (!Speech) {
-                console.warn("Speech Recognition not supported");
+                alert("Your browser does not support Speech Recognition");
                 return;
             }
 
@@ -117,11 +114,36 @@
             recognition.continuous = false;
             recognition.interimResults = false;
 
-            recognition.onstart = () => updateStatus(true);
-            recognition.onend = () => updateStatus(false);
+            recognition.onstart = () => {
+                isListening = true;
+                updateStatus(true);
+                console.log("🎤 Listening...");
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                updateStatus(false);
+                console.log("🛑 Mic stopped");
+
+                // ✅ AUTO RESTART (important)
+                if (STATE.isRobotOn && !STATE.isAITalking) {
+                    setTimeout(() => safeStartMic(), 500);
+                }
+            };
+
+            recognition.onerror = (e) => {
+                console.error("Mic error:", e);
+                isListening = false;
+
+                // restart on error
+                if (STATE.isRobotOn) {
+                    setTimeout(() => safeStartMic(), 1000);
+                }
+            };
 
             recognition.onresult = (e) => {
                 const transcript = e.results[0][0].transcript.toLowerCase();
+                console.log("🎤 Heard:", transcript);
 
                 if (STATE.isAITalking && /stop|bas|chup/.test(transcript)) {
                     stopSpeech();
@@ -212,14 +234,30 @@
         
         function toggleRobotMode() {
             STATE.isRobotOn = !STATE.isRobotOn;
+
             const btn = document.getElementById('robot-btn');
+
             if (STATE.isRobotOn) {
                 btn.className = "p-4 rounded-2xl bg-blue-600 text-white shadow-xl orb-active";
-                try { recognition.start(); } catch(e) {}
+
+                // 🔥 MUST be user-triggered
+                safeStartMic();
+
             } else {
                 btn.className = "p-4 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-500";
-                recognition.stop();
+
+                if (recognition) recognition.stop();
                 synth.cancel();
+            }
+        }
+
+        function safeStartMic() {
+            try {
+                if (recognition && !isListening) {
+                    recognition.start();
+                }
+            } catch (e) {
+                console.log("Mic restart blocked");
             }
         }
 
