@@ -66,13 +66,13 @@
         <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl w-full max-w-md">
             <h2 class="font-bold text-xl mb-6 dark:text-white">API Settings</h2>
             <input type="password" id="api-key" placeholder="OpenRouter API Key" class="w-full p-3 mb-4 rounded-xl border dark:bg-slate-700 dark:text-white">
-            <input type="text" id="model-id" value="mistralai/mistral-7b-instruct:free" class="w-full p-3 mb-6 rounded-xl border dark:bg-slate-700 dark:text-white">
+            <input type="text" id="model-id" value="minimax/minimax-m2.5:free" class="w-full p-3 mb-6 rounded-xl border dark:bg-slate-700 dark:text-white">
             <button onclick="saveSettings()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold">Save & Close</button>
         </div>
     </div>
 
     <script>
-        let STATE = { chats: [], currentId: null, apiKey: '', model: 'mistralai/mistral-7b-instruct:free', isRobotOn: false, isAITalking: false };
+        let STATE = { chats: [], currentId: null, apiKey: '', model: 'minimax/minimax-m2.5:free', isRobotOn: false, isAITalking: false };
         let recognition;
         const synth = window.speechSynthesis;
 
@@ -80,7 +80,7 @@
             const saved = JSON.parse(localStorage.getItem('robot_final_v1') || '{}');
             Object.assign(STATE, saved);
             document.getElementById('api-key').value = STATE.apiKey || '';
-            document.getElementById('model-id').value = STATE.model || 'mistralai/mistral-7b-instruct:free';
+            document.getElementById('model-id').value = STATE.model || 'minimax/minimax-m2.5:free';
             if (!STATE.currentId) createNewChat();
             initMic();
             refreshUI();
