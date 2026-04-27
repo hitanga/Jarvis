@@ -102,58 +102,66 @@
             
         };
         function initMic() {
-            const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-            if (!Speech) {
-                alert("Your browser does not support Speech Recognition");
-                return;
-            }
+    if (!Speech) {
+        alert("❌ Speech Recognition not supported in this browser.\nUse Google Chrome.");
+        return;
+    }
 
-            recognition = new Speech();
-            recognition.lang = 'en-US';
-            recognition.continuous = false;
-            recognition.interimResults = false;
+    recognition = new Speech();
 
-            recognition.onstart = () => {
-                isListening = true;
-                updateStatus(true);
-                console.log("🎤 Listening...");
-            };
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
 
-            recognition.onend = () => {
-                isListening = false;
-                updateStatus(false);
-                console.log("🛑 Mic stopped");
+    recognition.onstart = () => {
+        console.log("🎤 Listening...");
+        updateStatus(true);
+    };
 
-                // ✅ AUTO RESTART (important)
-                if (STATE.isRobotOn && !STATE.isAITalking) {
-                    setTimeout(() => safeStartMic(), 500);
-                }
-            };
+    recognition.onend = () => {
+        console.log("🛑 Mic stopped");
+        updateStatus(false);
 
-            recognition.onerror = (e) => {
-                console.error("Mic error:", e);
-                isListening = false;
-
-                // restart on error
-                if (STATE.isRobotOn) {
-                    setTimeout(() => safeStartMic(), 1000);
-                }
-            };
-
-            recognition.onresult = (e) => {
-                const transcript = e.results[0][0].transcript.toLowerCase();
-                console.log("🎤 Heard:", transcript);
-
-                if (STATE.isAITalking && /stop|bas|chup/.test(transcript)) {
-                    stopSpeech();
-                    return;
-                }
-
-                document.getElementById('user-input').value = transcript;
-                sendMessage();
-            };
+        // ✅ Restart ONLY if robot mode ON
+        if (STATE.isRobotOn && !STATE.isAITalking) {
+            setTimeout(() => {
+                try { recognition.start(); } catch(e) {}
+            }, 1000);
         }
+    };
+
+    recognition.onerror = (event) => {
+        console.error("Mic error:", event.error);
+
+        // ✅ Handle common errors
+        if (event.error === "not-allowed") {
+            alert("❌ Please allow microphone permission.");
+        }
+
+        if (event.error === "no-speech") {
+            console.log("⚠️ No speech detected");
+        }
+
+        if (event.error === "aborted") {
+            console.log("⚠️ Mic aborted");
+        }
+    };
+
+    recognition.onresult = (e) => {
+        const transcript = e.results[0][0].transcript;
+        console.log("🎤 Heard:", transcript);
+
+        if (STATE.isAITalking && /stop|bas|chup/i.test(transcript)) {
+            stopSpeech();
+            return;
+        }
+
+        document.getElementById('user-input').value = transcript;
+        sendMessage();
+    };
+}
 
         async function sendMessage() {
             const input = document.getElementById('user-input');
@@ -234,14 +242,16 @@
         
         function toggleRobotMode() {
             STATE.isRobotOn = !STATE.isRobotOn;
-
             const btn = document.getElementById('robot-btn');
 
             if (STATE.isRobotOn) {
                 btn.className = "p-4 rounded-2xl bg-blue-600 text-white shadow-xl orb-active";
 
-                // 🔥 MUST be user-triggered
-                safeStartMic();
+                try {
+                    recognition.start(); // ✅ start only ONCE
+                } catch (e) {
+                    console.log("Mic already started");
+                }
 
             } else {
                 btn.className = "p-4 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-500";
