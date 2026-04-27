@@ -40,23 +40,26 @@ body { height: 100vh; overflow: hidden; font-family: Arial; }
 </div>
 
 <!-- SETTINGS -->
-<div id="settings" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center">
-<div class="bg-white p-6 rounded w-80">
-    <input type="password" id="api-key" placeholder="Enter API Key" class="w-full p-2 border mb-3">
-    <input type="text" id="model-id" value="google/gemma-4-31b-it:free" class="w-full p-2 border">
-    <button onclick="saveSettings()" class="bg-blue-600 text-white w-full mt-3 p-2">Save</button>
-</div>
+<div id="settings" class="fixed bottom-4 right-4">
+    <input type="password" id="api-key" placeholder="API Key" class="p-2 border">
 </div>
 
 <script>
-let STATE = { chats: [], currentId: null, apiKey: '', model: 'google/gemma-4-31b-it:free', isRobotOn: false, isAITalking: false };
+let STATE = {
+    chats: [],
+    currentId: null,
+    apiKey: '',
+    model: 'google/gemma-4-31b-it:free',
+    isRobotOn: false,
+    isAITalking: false
+};
 
 let recognition;
 let isListening = false;
 const synth = window.speechSynthesis;
 let voices = [];
 
-// Load voices properly
+// load voices
 speechSynthesis.onvoiceschanged = () => {
     voices = speechSynthesis.getVoices();
 };
@@ -66,25 +69,53 @@ window.onload = () => {
     Object.assign(STATE, saved);
 
     document.getElementById('api-key').value = STATE.apiKey || '';
-    document.getElementById('model-id').value = STATE.model;
 
     if (!STATE.currentId) createNewChat();
+
     initMic();
     refreshUI();
 };
 
 function initMic() {
     const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Speech) return;
+
+    if (!Speech) {
+        alert("Speech Recognition not supported");
+        return;
+    }
 
     recognition = new Speech();
-    recognition.lang = 'en-US';
 
-    recognition.onstart = () => isListening = true;
-    recognition.onend = () => isListening = false;
+    recognition.lang = 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+        isListening = true;
+        console.log("Listening...");
+    };
+
+    recognition.onend = () => {
+        isListening = false;
+        console.log("Stopped");
+
+        if (STATE.isRobotOn && !STATE.isAITalking) {
+            try { recognition.start(); } catch(e) {}
+        }
+    };
+
+    recognition.onerror = (e) => {
+        console.log("Mic error:", e.error);
+
+        if (STATE.isRobotOn) {
+            try { recognition.start(); } catch(e) {}
+        }
+    };
 
     recognition.onresult = (e) => {
-        const text = e.results[0][0].transcript;
+        const text = e.results[e.results.length - 1][0].transcript.trim();
+        if (!text) return;
+
         document.getElementById('user-input').value = text;
         sendMessage();
     };
@@ -93,7 +124,7 @@ function initMic() {
 function toggleRobotMode() {
     STATE.isRobotOn = !STATE.isRobotOn;
 
-    if (!recognition) return;
+    if (!recognition) return alert("Mic not supported");
 
     if (STATE.isRobotOn) {
         try { recognition.start(); } catch(e) {}
@@ -137,8 +168,7 @@ async function sendMessage() {
         });
 
         if (!response.ok) {
-            const err = await response.text();
-            alert("API Error: " + err);
+            alert("API Error");
             return;
         }
 
@@ -163,21 +193,28 @@ function speak(text) {
     if (recognition) recognition.stop();
 
     const utter = new SpeechSynthesisUtterance(text);
-    const isHindi = /[\u0900-\u097F]/.test(text);
 
-    utter.voice = voices.find(v => v.lang.includes(isHindi ? 'hi' : 'en')) || voices[0];
+    utter.voice = voices.find(v => v.lang.includes('en')) || voices[0];
 
-    utter.onend = () => STATE.isAITalking = false;
+    utter.onend = () => {
+        STATE.isAITalking = false;
+
+        if (STATE.isRobotOn) {
+            try { recognition.start(); } catch(e) {}
+        }
+    };
 
     synth.speak(utter);
 }
 
 function refreshUI() {
     const list = document.getElementById('chat-list');
+
     list.innerHTML = STATE.chats.map(c => `
         <div onclick="switchChat('${c.id}')" class="p-2 border cursor-pointer">
             ${c.title || 'Chat'}
-        </div>`).join('');
+        </div>
+    `).join('');
 
     const chat = STATE.chats.find(c => c.id === STATE.currentId);
     if (!chat) return;
@@ -209,12 +246,11 @@ function switchChat(id) {
     refreshUI();
 }
 
-function saveSettings() {
-    STATE.apiKey = document.getElementById('api-key').value;
-    STATE.model = document.getElementById('model-id').value;
-    document.getElementById('settings').classList.add('hidden');
+// save API key live
+document.getElementById('api-key').addEventListener('input', (e) => {
+    STATE.apiKey = e.target.value;
     localStorage.setItem('jarvis', JSON.stringify(STATE));
-}
+});
 </script>
 
 </body>
